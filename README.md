@@ -6,6 +6,8 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 [x] Does not create window
 [x] Highly configurable
 
+I personally use this to play Osu! on Mac with trackpad.
+
 ## Modifying rule
 There is a function `map` in main.c that converts normalized finger position on
 trackpad to absolute coordinate of cursor on Screen.
