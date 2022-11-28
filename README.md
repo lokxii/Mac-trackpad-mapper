@@ -44,3 +44,7 @@ const MTPoint screenSize = { .x = 1440, .y = 900 };
 ```
 
 Modifying this constant changes screen size.
+
+## Reference
+Where I got the MultitouchSupport.h header
+https://gist.github.com/rmhsilva/61cc45587ed34707da34818a76476e11
