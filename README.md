@@ -2,9 +2,9 @@
 
 This utility maps finger position on trackpad to curosr coordinate on screen.
 
-[x] Lightweight
-[x] Does not create window
-[x] Highly configurable
+- [x] Lightweight
+- [x] Does not create window
+- [x] Highly configurable
 
 I personally use this to play Osu! on Mac with trackpad.
 
