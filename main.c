@@ -87,11 +87,15 @@ CGEventRef updateCursor(
         .x = (double)position.x,
         .y = (double)position.y,
     };
+
+    CGMouseButton button = type == kCGEventRightMouseDragged ?
+        kCGMouseButtonRight :
+        kCGMouseButtonLeft;
     event = CGEventCreateMouseEvent(
         eventSource,
         type,
         point,
-        kCGMouseButtonLeft);
+        button);
 
     // Append magic number
     CGEventSetIntegerValueField(event, kCGEventSourceUserData, 12345);
