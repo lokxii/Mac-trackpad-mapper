@@ -89,7 +89,7 @@ CGEventRef updateCursor(
     };
     event = CGEventCreateMouseEvent(
         eventSource,
-        kCGEventMouseMoved,
+        type,
         point,
         kCGMouseButtonLeft);
 
@@ -113,7 +113,9 @@ int main(int argc, char** argv) {
     // CGEventTap loop
     eventSource = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
 
-    CGEventMask mask = 1 << kCGEventMouseMoved;
+    CGEventMask mask = 1 << kCGEventMouseMoved |
+                       1 << kCGEventLeftMouseDragged |
+                       1 << kCGEventRightMouseDragged;
     CFMachPortRef handle = CGEventTapCreate(
         kCGSessionEventTap,
         kCGHeadInsertEventTap,
