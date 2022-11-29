@@ -49,8 +49,8 @@ Modifying this constant changes screen size.
 
 ## TODO List
 
-- [] Create an app that can toggle absolute tracking
-- [] Better way to change mapping rule
+- [ ] Create an app that can toggle absolute tracking
+- [ ] Better way to change mapping rule
 
 ## Reference
 Where I got the MultitouchSupport.h header
