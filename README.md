@@ -52,6 +52,11 @@ Modifying this constant changes screen size.
 Note that **trackpad mapper** does not validate screen size nor cursor
 coordinate. It is feed directly to mouse event and posted to event tab.
 
+## TODO List
+
+- [ ] Create an app that can toggle absolute tracking
+- [ ] Better way to change mapping rule
+
 ## Reference
 Where I got the MultitouchSupport.h header
 https://gist.github.com/rmhsilva/61cc45587ed34707da34818a76476e11
