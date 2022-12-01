@@ -9,8 +9,10 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 I personally use this to play Osu! on Mac with trackpad.
 
 ## Modifying rule
-There is a function `map` in main.c that converts normalized finger position on
-trackpad to absolute coordinate of cursor on Screen.
+There is a function `map` in `settings.h` that converts normalized finger
+position on trackpad to absolute coordinate of cursor on Screen.
+`MTPoint map(double, double)` must be provided in `settings.h` as it will be
+called in `main.c`.
 
 ```C
 MTPoint map(double normx, double normy) {
@@ -38,14 +40,17 @@ MTPoint map(double normx, double normy) {
 ```
 
 ## Screen Size
-This code does not detect screen size. Instead there is a global constant that keeps
-track of screen size
+This code does not detect screen size. Instead there is a global constant that
+keeps track of screen size.
 
 ```C
 const MTPoint screenSize = { .x = 1440, .y = 900 };
 ```
 
 Modifying this constant changes screen size.
+
+Note that **trackpad mapper** does not validate screen size nor cursor
+coordinate. It is feed directly to mouse event and posted to event tab.
 
 ## Reference
 Where I got the MultitouchSupport.h header

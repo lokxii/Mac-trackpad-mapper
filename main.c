@@ -4,6 +4,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include "MultitouchSupport.h"
 #include <Carbon/Carbon.h>
+#include "settings.h"
 
 #define try(...) \
     if ((__VA_ARGS__) == -1) { \
@@ -14,28 +15,8 @@
 pthread_mutex_t mutex;
 MTPoint fingerPosition = { 0, 0 };
 
-// Modify this according to your screen resolution
-const MTPoint screenSize = { .x = 1440, .y = 900 };
 CFRunLoopSourceRef runLoopSource;
 CGEventSourceRef eventSource;
-pid_t pid;
-
-// Modify this function to change how relative position of tracpad is mapped to screen coordinates
-MTPoint map(double normx, double normy) {
-    // top right 12.25% of the area of trackpad to whole screen
-    // MTPoint point = {
-    //     .x = normx >= 0.65 ? ((normx - 0.65) / 0.35) : 0,
-    //     .y = normy <= 0.35 ? (normy / 0.35) : 1,
-    // };
-    // point.x *= screenSize.x;
-    // point.y *= screenSize.y;
-
-    // whole trackpad to whole screen
-    MTPoint point = {
-        normx * screenSize.x, normy * screenSize.y
-    };
-    return point;
-}
 
 int trackpadCallback(
     MTDeviceRef device,
@@ -87,21 +68,40 @@ CGEventRef updateCursor(
         .x = (double)position.x,
         .y = (double)position.y,
     };
-
-    CGMouseButton button = type == kCGEventRightMouseDragged ?
-        kCGMouseButtonRight :
-        kCGMouseButtonLeft;
-    event = CGEventCreateMouseEvent(
-        eventSource,
-        type,
-        point,
-        button);
-
-    // Append magic number
-    CGEventSetIntegerValueField(event, kCGEventSourceUserData, 12345);
-
-    CGEventPost(kCGHIDEventTap, event);
     
+    // Move mouse before click
+    switch (type) {
+        case kCGEventRightMouseDown:
+        case kCGEventLeftMouseDown: {
+            CGMouseButton button = type == kCGEventLeftMouseDown ?
+                kCGMouseButtonLeft :
+                kCGMouseButtonRight;
+            event = CGEventCreateMouseEvent(
+                eventSource,
+                kCGEventMouseMoved,
+                point,
+                button);
+            // Append magic number
+            CGEventSetIntegerValueField(event, kCGEventSourceUserData, 12345);
+            CGEventPost(kCGHIDEventTap, event);
+        }
+
+        default: {
+            CGMouseButton button = type == kCGEventRightMouseDragged ?
+                kCGMouseButtonRight :
+                kCGMouseButtonLeft;
+            event = CGEventCreateMouseEvent(
+                eventSource,
+                type,
+                point,
+                button);
+            // Append magic number
+            CGEventSetIntegerValueField(event, kCGEventSourceUserData, 12345);
+            CGEventPost(kCGHIDEventTap, event);
+            break;
+        }
+    }
+
     return NULL;
 }
 
@@ -119,7 +119,9 @@ int main(int argc, char** argv) {
 
     CGEventMask mask = 1 << kCGEventMouseMoved |
                        1 << kCGEventLeftMouseDragged |
-                       1 << kCGEventRightMouseDragged;
+                       1 << kCGEventRightMouseDragged |
+                       1 << kCGEventLeftMouseDown |
+                       1 << kCGEventRightMouseDown;
     CFMachPortRef handle = CGEventTapCreate(
         kCGSessionEventTap,
         kCGHeadInsertEventTap,
