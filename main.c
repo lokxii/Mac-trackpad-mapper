@@ -72,7 +72,9 @@ CGEventRef updateCursor(
     // Move mouse before click
     switch (type) {
         case kCGEventRightMouseDown:
-        case kCGEventLeftMouseDown: {
+        case kCGEventLeftMouseDown:
+        case kCGEventRightMouseUp:
+        case kCGEventLeftMouseUp: {
             CGMouseButton button = type == kCGEventLeftMouseDown ?
                 kCGMouseButtonLeft :
                 kCGMouseButtonRight;
@@ -102,7 +104,7 @@ CGEventRef updateCursor(
         }
     }
 
-    return NULL;
+    return event;
 }
 
 int main(int argc, char** argv) {
@@ -121,11 +123,14 @@ int main(int argc, char** argv) {
                        1 << kCGEventLeftMouseDragged |
                        1 << kCGEventRightMouseDragged |
                        1 << kCGEventLeftMouseDown |
-                       1 << kCGEventRightMouseDown;
+                       1 << kCGEventRightMouseDown |
+                       1 << kCGEventRightMouseUp |
+                       1 << kCGEventRightMouseUp;
     CFMachPortRef handle = CGEventTapCreate(
         kCGSessionEventTap,
         kCGHeadInsertEventTap,
-        kCGEventTapOptionListenOnly, // You may want to use kCGEventTapOptionDefault depending on apps
+        // kCGEventTapOptionListenOnly, // You may want to use kCGEventTapOptionDefault depending on apps
+        kCGEventTapOptionDefault,
         mask,
         updateCursor,
         NULL);
