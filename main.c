@@ -15,8 +15,9 @@
 pthread_mutex_t mutex;
 MTPoint fingerPosition = { 0, 0 };
 
-CFRunLoopSourceRef runLoopSource;
 CGEventSourceRef eventSource;
+
+#define MAGIC_SELF_EVENT 12345
 
 int trackpadCallback(
     MTDeviceRef device,
@@ -39,71 +40,71 @@ int trackpadCallback(
     return 0;
 }
 
+// This callback is also called when Quartz recieve the mouseMoved event
+// posted by this callback. Then recusion will be indrectly formed.
+// Posting event is expensive thus recursion should be avoided.
+// Append a magic number to the mouseMoved event and prevent this callback
+// from reacting to our own mouseMoved events.
 CGEventRef updateCursor(
     CGEventTapProxy proxy,
     CGEventType type,
     CGEventRef event,
     void *reference)
 {
-    // This callback is called when Quartz recieve the mouseMoved event
-    // posted by this callback. Then recusion will be indrectly formed.
-    // Posting event is expensive thus recursion should be avoided.
-    // Append a magic number to the mouseMoved event and prevent this callback
-    // from reacting to our own mouseMoved events.
-    
     // Retrieve magic number
-    int id = CGEventGetIntegerValueField(event, kCGEventSourceUserData);
-    if (id == 12345) {
+    int magic = CGEventGetIntegerValueField(event, kCGEventSourceUserData);
+    if (magic == MAGIC_SELF_EVENT) {
         return NULL;
     }
+    
+    int id = CGEventGetIntegerValueField(event, kCGMouseEventNumber);
 
     // unlock mutex as early as possible
     try(pthread_mutex_lock(&mutex));
     MTPoint position = fingerPosition;
     try(pthread_mutex_unlock(&mutex));
 
-    // printf("%.1f %.1f\n", position.x, position.y);
     // generate event
     CGPoint point = (CGPoint){
         .x = (double)position.x,
         .y = (double)position.y,
     };
     
-    // Move mouse before click
+    CGEventRef newEvent;
+    
     switch (type) {
+        // Move cursor before clicking
         case kCGEventRightMouseDown:
-        case kCGEventLeftMouseDown:
         case kCGEventRightMouseUp:
+        case kCGEventLeftMouseDown:
         case kCGEventLeftMouseUp: {
-            CGMouseButton button = type == kCGEventLeftMouseDown ?
-                kCGMouseButtonLeft :
-                kCGMouseButtonRight;
-            event = CGEventCreateMouseEvent(
+            newEvent = CGEventCreateMouseEvent(
                 eventSource,
                 kCGEventMouseMoved,
                 point,
-                button);
-            // Append magic number
-            CGEventSetIntegerValueField(event, kCGEventSourceUserData, 12345);
-            CGEventPost(kCGHIDEventTap, event);
+                kCGMouseButtonLeft);
+            break;
         }
-
+        
         default: {
             CGMouseButton button = type == kCGEventRightMouseDragged ?
                 kCGMouseButtonRight :
                 kCGMouseButtonLeft;
-            event = CGEventCreateMouseEvent(
+            newEvent = CGEventCreateMouseEvent(
                 eventSource,
                 type,
                 point,
                 button);
-            // Append magic number
-            CGEventSetIntegerValueField(event, kCGEventSourceUserData, 12345);
-            CGEventPost(kCGHIDEventTap, event);
             break;
         }
     }
 
+    // Append magic number
+    CGEventSetIntegerValueField(newEvent, kCGEventSourceUserData, MAGIC_SELF_EVENT);
+    CGEventSetIntegerValueField(newEvent, kCGMouseEventNumber, id);
+    CGEventPost(kCGHIDEventTap, newEvent);
+
+    CGEventSetIntegerValueField(event, kCGEventSourceUserData, MAGIC_SELF_EVENT);
     return event;
 }
 
@@ -119,23 +120,20 @@ int main(int argc, char** argv) {
     // CGEventTap loop
     eventSource = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
 
+    // cursor movement
     CGEventMask mask = 1 << kCGEventMouseMoved |
                        1 << kCGEventLeftMouseDragged |
-                       1 << kCGEventRightMouseDragged |
-                       1 << kCGEventLeftMouseDown |
-                       1 << kCGEventRightMouseDown |
-                       1 << kCGEventRightMouseUp |
-                       1 << kCGEventRightMouseUp;
+                       1 << kCGEventRightMouseDragged;
     CFMachPortRef handle = CGEventTapCreate(
-        kCGSessionEventTap,
+        kCGHIDEventTap,
         kCGHeadInsertEventTap,
-        // kCGEventTapOptionListenOnly, // You may want to use kCGEventTapOptionDefault depending on apps
         kCGEventTapOptionDefault,
         mask,
         updateCursor,
         NULL);
-    runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, handle, 0);
+    CFRunLoopSourceRef runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, handle, 0);
     CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, kCFRunLoopCommonModes);
+    
     CFRunLoopRun();
     return 0;
 }
