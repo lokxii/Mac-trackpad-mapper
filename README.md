@@ -5,6 +5,7 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 - [x] Lightweight
 - [x] Does not create window
 - [x] Highly configurable
+- [x] Status bar app for easy toggling absolute tracking
 
 I personally use this to play Osu! on Mac with trackpad.
 
@@ -39,6 +40,8 @@ MTPoint map(double normx, double normy) {
 }
 ```
 
+Remember to rebuild the app everytime you changed `map`.
+
 ## Screen Size
 This code does not detect screen size. Instead there is a global constant that
 keeps track of screen size.
@@ -52,9 +55,24 @@ Modifying this constant changes screen size.
 Note that **trackpad mapper** does not validate screen size nor cursor
 coordinate. It is feed directly to mouse event and posted to event tab.
 
+## Building
+
+To compile, run
+```sh
+make release
+```
+
+The app is located in `build/`.
+
+You may want to copy the app to the `/Applications/` folder or run
+```sh
+make install
+```
+to do it for you.
+
 ## TODO List
 
-- [ ] Create an app that can toggle absolute tracking
+- [x] Create an app that can toggle absolute tracking
 - [ ] Better way to change mapping rule
 
 ## Reference

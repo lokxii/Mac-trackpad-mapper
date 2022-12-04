@@ -1,2 +1,4 @@
-trackpad_mapper*
+build/
 *.svg
+icons_script*
+*.png
