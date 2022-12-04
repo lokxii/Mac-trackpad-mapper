@@ -13,7 +13,7 @@ I personally use this to play Osu! on Mac with trackpad.
 There is a function `map` in `settings.h` that converts normalized finger
 position on trackpad to absolute coordinate of cursor on Screen.
 `MTPoint map(double, double)` must be provided in `settings.h` as it will be
-called in `main.c`.
+called in `trackpad_mapper_util.c`.
 
 ```C
 MTPoint map(double normx, double normy) {
