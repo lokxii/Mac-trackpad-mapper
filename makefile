@@ -9,17 +9,29 @@ APP="Trackpad Mapper.app"
 
 all:
 	if [[ ! -e ${BUILD_DIR} ]]; then mkdir -p ${BUILD_DIR}; fi
-	gcc ${LIBS} ${UTIL}.c -o ${BUILD_DIR}/${UTIL} -g
-	swiftc ${TARGET}.swift -o ${BUILD_DIR}/${TARGET} -g
+	make util
 	make app
+	make bundle
 
 release:
 	if [[ ! -e ${BUILD_DIR} ]]; then mkdir -p ${BUILD_DIR}; fi
+	make util_release
+	make app_release
+	make bundle
+
+util:
+	gcc ${LIBS} ${UTIL}.c -o ${BUILD_DIR}/${UTIL} -g
+
+util_release:
 	gcc ${LIBS} ${UTIL}.c -o ${BUILD_DIR}/${UTIL} -O3
-	swiftc ${TARGET}.swift -o ${BUILD_DIR}/${TARGET} -O
-	make app
 
 app:
+	swiftc ${TARGET}.swift -o ${BUILD_DIR}/${TARGET} -g
+
+app_release:
+	swiftc ${TARGET}.swift -o ${BUILD_DIR}/${TARGET} -O
+
+bundle:
 	@if [[ ! -e ${BUILD_DIR}/${APP} ]]; then \
 		echo Creating app bundle; \
 		mkdir -p ${BUILD_DIR}/${APP}/Contents/MacOS; \
@@ -32,3 +44,6 @@ app:
 
 install:
 	cp -R ${BUILD_DIR}/${APP} /Applications
+
+install_util_update:
+	cp ${BUILD_DIR}/${UTIL} /Applications/${APP}/Contents/MacOS
