@@ -108,7 +108,28 @@ CGEventRef updateCursor(
     return event;
 }
 
+bool check_privileges(void) {
+    bool result;
+    const void *keys[] = { kAXTrustedCheckOptionPrompt };
+    const void *values[] = { kCFBooleanTrue };
+
+    CFDictionaryRef options;
+    options = CFDictionaryCreate(kCFAllocatorDefault,
+                                 keys, values, sizeof(keys) / sizeof(*keys),
+                                 &kCFCopyStringDictionaryKeyCallBacks,
+                                 &kCFTypeDictionaryValueCallBacks);
+
+    result = AXIsProcessTrustedWithOptions(options);
+    CFRelease(options);
+
+    return result;
+}
+
 int main(int argc, char** argv) {
+    if (!check_privileges()) {
+        printf("Requires accessbility privileges\n");
+        return 1;
+    }
     // init mutex
     try(pthread_mutex_init(&mutex, NULL));
     
@@ -123,7 +144,11 @@ int main(int argc, char** argv) {
     // cursor movement
     CGEventMask mask = 1 << kCGEventMouseMoved |
                        1 << kCGEventLeftMouseDragged |
-                       1 << kCGEventRightMouseDragged;
+                       1 << kCGEventRightMouseDragged |
+                       1 << kCGEventRightMouseDown |
+                       1 << kCGEventRightMouseUp |
+                       1 << kCGEventLeftMouseDown |
+                       1 << kCGEventLeftMouseUp;
     CFMachPortRef handle = CGEventTapCreate(
         kCGHIDEventTap,
         kCGHeadInsertEventTap,

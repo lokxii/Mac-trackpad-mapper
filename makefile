@@ -16,7 +16,7 @@ all:
 release:
 	if [[ ! -e ${BUILD_DIR} ]]; then mkdir -p ${BUILD_DIR}; fi
 	gcc ${LIBS} ${UTIL}.c -o ${BUILD_DIR}/${UTIL} -O3
-	swiftc ${TARGET}.swift -o ${BUILD_DIR}/${TARGET} -O3
+	swiftc ${TARGET}.swift -o ${BUILD_DIR}/${TARGET} -O
 	make app
 
 app:
