@@ -76,7 +76,7 @@ After you modified `map`, run
 ```sh
 make util_release install_util_update
 ```
-This is compile and update the util binary in the app bundle inside `/Applications/`
+This will compile and update the util binary in the app bundle inside `/Applications/`
 
 ## TODO List
 
