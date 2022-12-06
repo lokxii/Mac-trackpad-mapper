@@ -40,7 +40,7 @@ MTPoint map(double normx, double normy) {
 }
 ```
 
-Remember to rebuild the app everytime you changed `map`.
+Remember to rebuild the util everytime you changed `map`.
 
 ## Screen Size
 This code does not detect screen size. Instead there is a global constant that
@@ -69,6 +69,14 @@ You may want to copy the app to the `/Applications/` folder or run
 make install
 ```
 to do it for you.
+
+## Rebuilding Util
+
+After you modified `map`, run
+```sh
+make util_release install_util_update
+```
+This is compile and update the util binary in the app bundle inside `/Applications/`
 
 ## TODO List
 
