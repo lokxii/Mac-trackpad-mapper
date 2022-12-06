@@ -98,7 +98,6 @@ CGEventRef updateCursor(
             break;
         }
     }
-
     // Append magic number
     CGEventSetIntegerValueField(newEvent, kCGEventSourceUserData, MAGIC_SELF_EVENT);
     CGEventSetIntegerValueField(newEvent, kCGMouseEventNumber, id);
@@ -152,7 +151,7 @@ int main(int argc, char** argv) {
     CFMachPortRef handle = CGEventTapCreate(
         kCGHIDEventTap,
         kCGHeadInsertEventTap,
-        kCGEventTapOptionDefault,
+        kCGEventTapOptionListenOnly,
         mask,
         updateCursor,
         NULL);
