@@ -45,7 +45,6 @@ MTPoint map(double normx, double normy) {
             //the top half (0 to 0.5) of the trackpad
             .y = rangeRatio(normy, 0, .5),
         };
-    //scaling the points up to the screensize
     point.x *= screenSize.x;
     point.y *= screenSize.y;
     return point;
