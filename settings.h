@@ -14,11 +14,15 @@ static inline double rangeRatio(double n, double lower, double upper) {
     }
 }
 
-// Modify this function to change how relative position of tracpad is mapped to screen coordinates
+// Modify this function to change how relative position of trackpad is mapped to screen coordinates
 static inline MTPoint map(double normx, double normy) {
     // whole trackpad to whole screen
     MTPoint point = {
-        normx * screenSize.x, normy * screenSize.y
+        .x = normx,
+        .y = normy,
     };
+    //scaling the points up to the screen size
+    point.x *= screenSize.x;
+    point.y *= screenSize.y;
     return point;
 }
