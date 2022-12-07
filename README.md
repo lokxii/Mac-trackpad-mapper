@@ -27,7 +27,7 @@ MTPoint map(double normx, double normy) {
 
 Use the function `rangeRatio()` to map custom arrangments.
 
-```
+```C
 .x = rangeRatio(normx, lowx, highx),
 .y = rangeRatio(normy, lowy, highy),
 ```
