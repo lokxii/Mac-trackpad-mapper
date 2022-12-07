@@ -7,7 +7,7 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 - [x] Highly configurable
 - [x] Status bar app for easy toggling absolute tracking
 
-I personally use this to play Osu! on Mac with trackpad.
+I personally use this to play Osu! (& Osu!lazer) on Mac with trackpad.
 
 ## Modifying rule
 There is a function `map` in `settings.h` that converts normalized finger
@@ -25,15 +25,27 @@ MTPoint map(double normx, double normy) {
 }
 ```
 
+Use the function `rangeRatio()` to map custom arrangments.
+
+```
+.x = rangeRatio(normx, lowx, highx),
+.y = rangeRatio(normy, lowy, highy),
+```
+
+Set the `lowx` & `highx` to a number between 0 & 1, much like a percentage. To map the middle of the trackpad to the whole screen (for x dimension), set `lowx` to `.25` & `highx` to `.75`.  
+
 Example code to map to top right quarter of trackpad to whole screen
 
 ```C
 MTPoint map(double normx, double normy) {
     // top right quarter of the area of trackpad to whole screen
     MTPoint point = {
-        .x = normx >= 0.5 ? ((normx - 0.5) / 0.5) : 0,
-        .y = normy <= 0.5 ? (normy / 0.5) : 1,
-    };
+            //the right half (.5 to 1) of the trackpad
+            .x = rangeRatio(normx, .5, 1),
+            //the top half (0 to 0.5) of the trackpad
+            .y = rangeRatio(normy, 0, .5),
+        };
+    //scaling the points up to the screensize
     point.x *= screenSize.x;
     point.y *= screenSize.y;
     return point;
