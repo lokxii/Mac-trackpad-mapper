@@ -1,9 +1,9 @@
 #pragma once
 
-// Modify this according to your screen resolution
+// Compulsory: Modify this according to your screen resolution
 const MTPoint screenSize = { .x = 1440, .y = 900 };
 
-// lower and upper has to be without 0 to 1 inclusive
+// Helper function: lower and upper has to be without 0 to 1 inclusive
 static inline double rangeRatio(double n, double lower, double upper) {
     if (n >= lower && n <= upper) {
         return (n - lower) / (upper - lower);
@@ -14,7 +14,7 @@ static inline double rangeRatio(double n, double lower, double upper) {
     }
 }
 
-// Modify this function to change how relative position of trackpad is mapped to screen coordinates
+// Compulsory: Modify this function to change how relative position of trackpad is mapped to screen coordinates
 static inline MTPoint map(double normx, double normy) {
     // whole trackpad to whole screen
     MTPoint point = {
