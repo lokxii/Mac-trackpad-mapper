@@ -10,6 +10,10 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 I personally use this to play Osu! (& Osu!lazer) on Mac with trackpad.
 
 ## Modifying rule
+The default settings are stored in `settings.def.h`. You may want to make a
+copy of it and rename it to `settings.h`. This is where all local settings are
+stored.
+
 There is a function `map` in `settings.h` that converts normalized finger
 position on trackpad to absolute coordinate of cursor on Screen.
 `MTPoint map(double, double)` must be provided in `settings.h` as it will be

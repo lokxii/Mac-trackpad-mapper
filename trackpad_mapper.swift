@@ -45,11 +45,6 @@ class Menu: NSMenu {
 	}
 }
 
-let dict = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true];
-if !AXIsProcessTrustedWithOptions(dict as CFDictionary) {
-	exit(1)
-}
-
 // initialize NSApp
 let _ = NSApplication.shared
 NSApp.setActivationPolicy(.regular)
