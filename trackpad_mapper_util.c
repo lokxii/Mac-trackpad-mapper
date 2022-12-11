@@ -22,7 +22,7 @@ int trackpadCallback(
     double timestamp,
     size_t frame)
 {
-    if (nFingers == 1) {
+    if (nFingers > 0) {
         // remembers currently using which finger
         MTTouch *f = &data[0];
         for (int i = 0; i < nFingers; i++){
@@ -47,7 +47,6 @@ int trackpadCallback(
             .y = fingerPosition.y - oldFingerPosition.y,
         };
         CGWarpMouseCursorPosition(point);
-        return 0;
     }
     return 0;
 }
