@@ -25,22 +25,32 @@ typedef struct {
     Screensize screensize;
 } Settings;
 
-Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, { 1440, 900 } };
+Settings settings;
 MTPoint fingerPosition = { 0, 0 };
 MTPoint oldFingerPosition = { 0, 0 };
 int32_t fingerID = 0;
 
-static inline double _rangeRatio(double n, double lower, double upper) {
+double _rangeRatio(double n, double lower, double upper) {
    return (n - lower) / (upper - lower);
 }
 
-static inline MTPoint _map(double normx, double normy) {
+double _reverseRangeRatio(double n, double lower, double upper) {
+    return n * (upper - lower) + lower;
+}
+
+MTPoint _map(double normx, double normy) {
     MTPoint point = {
         .x = _rangeRatio(
             normx, settings.trackpadRange.lowx, settings.trackpadRange.upx),
         .y = _rangeRatio(
             normy, settings.trackpadRange.lowy, settings.trackpadRange.upy),
     };
+
+    point.x = _reverseRangeRatio(
+            point.x, settings.screenRange.lowx, settings.screenRange.upx);
+    point.y = _reverseRangeRatio(
+            point.y, settings.screenRange.lowy, settings.screenRange.upy);
+
     point.x *= settings.screensize.width;
     point.y *= settings.screensize.height;
     return point;
@@ -143,7 +153,8 @@ Screensize parseScreensize(char* s) {
 }
 
 Settings parseSettings(int argc, char** argv) {
-    Settings settings;
+    // Default settings
+    Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, { 1440, 900 } };
     int opt;
     while ((opt = getopt(argc, argv, "i:o:s:")) != -1) {
         switch (opt) {
