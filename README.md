@@ -74,7 +74,7 @@ const MTPoint screenSize = { .x = 1440, .y = 900 };
 Modifying this constant changes screen size.
 
 Note that **trackpad mapper** does not validate screen size nor cursor
-coordinate. It is feed directly to mouse event and posted to event tab.
+coordinate. Validating cursor position is done by window server.
 
 ## Building
 
