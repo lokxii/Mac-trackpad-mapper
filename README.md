@@ -9,6 +9,12 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 
 I personally use this to play Osu! (& Osu!lazer) on Mac with trackpad.
 
+## Usage
+
+Open the app, there is a trackpad icon shown on the status bar. By default,
+mapping was disabled. To toggle mapping, click the icon and choose 'Start
+absolute tracking' or 'Stop absolute tracking'
+
 ## Modifying rule
 The default settings are stored in `settings.def.h`. You may want to make a
 copy of it and rename it to `settings.h`. This is where all local settings are
