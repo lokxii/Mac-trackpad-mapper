@@ -26,15 +26,18 @@ typedef struct {
 } Settings;
 
 Settings settings;
-MTPoint fingerPosition = { 0, 0 };
-MTPoint oldFingerPosition = { 0, 0 };
-int32_t fingerID = 0;
 
 double _rangeRatio(double n, double lower, double upper) {
-   return (n - lower) / (upper - lower);
+    if (n < lower || n > upper) {
+        return -1;
+    }
+    return (n - lower) / (upper - lower);
 }
 
 double _reverseRangeRatio(double n, double lower, double upper) {
+    if (n < 0) {
+        return n;
+    }
     return n * (upper - lower) + lower;
 }
 
@@ -64,6 +67,12 @@ int trackpadCallback(
     double timestamp,
     size_t frame)
 {
+    static MTPoint fingerPosition = { 0, 0 },
+                   oldFingerPosition = { 0, 0 },
+                   oldVelocity = { 0, 0 };
+    static int32_t oldPathIndex = -1,
+                   fingerID = 0;
+    static double oldTimeStamp = 0;
     if (nFingers > 0) {
         // remembers currently using which finger
         MTTouch *f = &data[0];
@@ -79,12 +88,36 @@ int trackpadCallback(
         // use settings.h if no command line arguments are given
         fingerPosition = (settings.useArg ? _map : map)(
                 f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
+        MTPoint velocity = f->normalizedVector.velocity;
+        
+        if (fingerPosition.x < 0 || fingerPosition.y < 0) {
+            // Only lock cursor when finger starts path on dead zone
+            if (f->pathIndex == oldPathIndex) {
+                if (fingerPosition.x < 0) {
+                    fingerPosition.x = oldFingerPosition.x +
+                        velocity.x * (timestamp - oldTimeStamp) * 1000;
+                }
+                if (fingerPosition.y < 0) {
+                    fingerPosition.y = oldFingerPosition.y -
+                        velocity.y * (timestamp - oldTimeStamp) * 1000;
+                }
+
+                velocity = (MTPoint){ 0, 0 };
+            } else {
+                fingerPosition = oldFingerPosition;
+            }
+        } else {
+            oldPathIndex = f->pathIndex;
+        }
 
         CGPoint point = {
             .x = fingerPosition.x,
             .y = fingerPosition.y,
         };
         CGWarpMouseCursorPosition(point);
+
+        oldVelocity = velocity;
+        oldTimeStamp = timestamp;
     }
     return 0;
 }
