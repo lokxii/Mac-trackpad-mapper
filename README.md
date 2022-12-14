@@ -15,7 +15,24 @@ Open the app, there is a trackpad icon shown on the status bar. By default,
 mapping was disabled. To toggle mapping, click the icon and choose 'Start
 absolute tracking' or 'Stop absolute tracking'
 
-## Modifying rule
+## Settings
+
+In the preference window, there are three items:
+
+1. - [ ] Use settings in header file (settings.h)
+2. Trackpad region: [Region]
+3. Screen region: [Region]
+
+If you want to use your custom code to map coordinates, enable the first item.
+(See Modifying rule in header file)
+
+The syntax of [Region] is `lowx,lowy,upx,upy`, where all numbers are floats in
+range 0 to 1 inclusively. These numbers are passed as command line arguments to
+`trackpad_mapper_util`. Click `Apply` to update the settings and remember to
+restart absolute tracking.
+
+## Modifying rule in header file
+
 The default settings are stored in `settings.def.h`. You may want to make a
 copy of it and rename it to `settings.h`. This is where all local settings are
 stored.
@@ -64,6 +81,7 @@ MTPoint map(double normx, double normy) {
 Remember to rebuild the util everytime you changed `map`.
 
 ## Screen Size
+
 This code does not detect screen size. Instead there is a global constant that
 keeps track of screen size.
 

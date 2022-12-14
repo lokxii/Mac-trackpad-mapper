@@ -16,16 +16,18 @@ struct PreferenceUIView: View {
         VStack {
             Toggle("Use settings in header file (settings.h)", isOn: $useHeader)
                 .toggleStyle(.checkbox)
-            Form {
-                TextField("Trackpad region:", text: $trackpadRange)
-                TextField("Screen region:", text: $screenRange)
+            if (!useHeader) {
+                Form {
+                    TextField("Trackpad region:", text: $trackpadRange)
+                    TextField("Screen region:", text: $screenRange)
+                }
             }
             Button (action: {
-                if isValid {
+                if isValid && !useHeader {
                     settings.trackpadRange = Settings.Range.init(from: trackpadRange)
                     settings.screenRange = Settings.Range.init(from: screenRange)
-                    settings.useHeader = useHeader
                 }
+                settings.useHeader = useHeader
             }) {
                 Text("Apply").padding()
             }
