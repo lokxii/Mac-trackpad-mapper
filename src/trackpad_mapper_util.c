@@ -2,7 +2,7 @@
 #include <Carbon/Carbon.h>
 #include <CoreGraphics/CoreGraphics.h>
 #include "MultitouchSupport.h"
-#include "settings.h"
+#include "../settings.h"
 
 #define try(...) \
     if ((__VA_ARGS__) == -1) { \

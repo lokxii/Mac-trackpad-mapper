@@ -3,6 +3,7 @@ LIBS=-F/System/Library/PrivateFrameworks -framework MultitouchSupport \
 	 -framework Carbon
 
 BUILD_DIR=build
+SOURCE_DIR=src
 UTIL=trackpad_mapper_util
 TARGET=trackpad_mapper
 APP="Trackpad Mapper.app"
@@ -24,17 +25,17 @@ settings.h:
 
 util:
 	make settings.h
-	gcc ${LIBS} ${UTIL}.c -o ${BUILD_DIR}/bin/${UTIL} -g
+	gcc ${LIBS} ${SOURCE_DIR}/${UTIL}.c -o ${BUILD_DIR}/bin/${UTIL} -g
 
 util_release:
 	make settings.h
-	gcc ${LIBS} ${UTIL}.c -o ${BUILD_DIR}/bin/${UTIL} -O3
+	gcc ${LIBS} ${SOURCE_DIR}/${UTIL}.c -o ${BUILD_DIR}/bin/${UTIL} -O3
 
 app:
-	swiftc ${TARGET}.swift -o ${BUILD_DIR}/bin/${TARGET} -g
+	swiftc ${SOURCE_DIR}/*.swift -o ${BUILD_DIR}/bin/${TARGET} -g
 
 app_release:
-	swiftc ${TARGET}.swift -o ${BUILD_DIR}/bin/${TARGET} -O
+	swiftc ${SOURCE_DIR}/*.swift -o ${BUILD_DIR}/bin/${TARGET} -O
 
 bundle:
 	@if [[ ! -e ${BUILD_DIR}/${APP} ]]; then \
