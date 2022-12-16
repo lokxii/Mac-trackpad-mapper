@@ -25,7 +25,7 @@ typedef struct {
     Screensize screensize;
 } Settings;
 
-Settings settings;
+Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, { 1440, 900 } };
 
 double _rangeRatio(double n, double lower, double upper) {
     if (n < lower || n > upper) {
@@ -141,11 +141,11 @@ bool check_privileges(void) {
 }
 
 Range parseRange(char* s) {
-    char* token[4];
+    char* token[4 + 1];
     int i = 0;
-    for (;(token[i] = strsep(&s, ",")) != NULL; i++) { }
-    if (i != 4) {
-        fputs("Range format: lowx,lowy,upx,upy", stderr);
+    for (;(token[i] = strsep(&s, ",")) != NULL && i < 4; i++) { }
+    if (i != 4 || token[4] != NULL) {
+        fputs("Range format: lowx,lowy,upx,upy and numbers in range [0, 1]", stderr);
         exit(1);
     }
     float num[4];
@@ -164,10 +164,10 @@ Range parseRange(char* s) {
 
 Screensize parseScreensize(char* s) {
     puts(s);
-    char* token[2];
+    char* token[2+1];
     int i = 0;
-    for (;(token[i] = strsep(&s, "x")) != NULL; i++) { }
-    if (i != 2) {
+    for (;(token[i] = strsep(&s, "x")) != NULL && i < 2; i++) { }
+    if (i != 2 || token[2] != NULL) {
         fputs("Size format: widthxheight", stderr);
         exit(1);
     }
@@ -185,9 +185,7 @@ Screensize parseScreensize(char* s) {
     };
 }
 
-Settings parseSettings(int argc, char** argv) {
-    // Default settings
-    Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, { 1440, 900 } };
+void parseSettings(int argc, char** argv) {
     int opt;
     while ((opt = getopt(argc, argv, "i:o:s:")) != -1) {
         switch (opt) {
@@ -208,7 +206,6 @@ Settings parseSettings(int argc, char** argv) {
                 exit(EXIT_FAILURE);
         }
     }
-    return settings;
 }
 
 int main(int argc, char** argv) {
@@ -216,7 +213,7 @@ int main(int argc, char** argv) {
     //     printf("Requires accessbility privileges\n");
     //     return 1;
     // }
-    settings = parseSettings(argc, argv);
+    parseSettings(argc, argv);
     
     // start trackpad service
     MTDeviceRef dev = MTDeviceCreateDefault();
