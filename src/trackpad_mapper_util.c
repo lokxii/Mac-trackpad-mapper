@@ -68,21 +68,18 @@ int trackpadCallback(
     size_t frame)
 {
     static MTPoint fingerPosition = { 0, 0 },
-                   oldFingerPosition = { 0, 0 },
-                   oldVelocity = { 0, 0 };
-    static int32_t oldPathIndex = -1,
-                   fingerID = 0;
+                   oldFingerPosition = { 0, 0 };
+    static int32_t oldPathIndex = -1;
     static double oldTimeStamp = 0;
     if (nFingers > 0) {
         // remembers currently using which finger
         MTTouch *f = &data[0];
         for (int i = 0; i < nFingers; i++){
-            if (data[i].fingerID == fingerID) {
+            if (data[i].pathIndex == oldPathIndex) {
                 f = &data[i];
                 break;
             }
         }
-        fingerID = f->fingerID;
 
         oldFingerPosition = fingerPosition;
         // use settings.h if no command line arguments are given
@@ -102,7 +99,6 @@ int trackpadCallback(
                         velocity.y * (timestamp - oldTimeStamp) * 1000;
                 }
 
-                velocity = (MTPoint){ 0, 0 };
             } else {
                 fingerPosition = oldFingerPosition;
             }
@@ -116,7 +112,6 @@ int trackpadCallback(
         };
         CGWarpMouseCursorPosition(point);
 
-        oldVelocity = velocity;
         oldTimeStamp = timestamp;
     }
     return 0;

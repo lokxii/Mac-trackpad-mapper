@@ -101,5 +101,6 @@ class MainMenu: NSMenu {
     @objc
     public func openPreference(_: Any?) {
         preferenceWindow.makeKeyAndOrderFront(nil)
+        preferenceWindow.orderedIndex = 0
     }
 }
