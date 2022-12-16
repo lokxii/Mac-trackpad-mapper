@@ -96,6 +96,8 @@ coordinate. Validating cursor position is done by window server.
 
 ## Building
 
+Building the app requires Xcode version >= 11.
+
 To compile, run
 ```sh
 make release
