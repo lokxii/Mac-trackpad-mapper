@@ -67,12 +67,16 @@ class MainMenu: NSMenu {
         if process == nil {
             var processUrl = Bundle.main.bundleURL
             processUrl.appendPathComponent("Contents/MacOS/trackpad_mapper_util")
-            process = try! Process.run(
-                processUrl,
-                arguments: settings.useHeader ? [] : settings.toArgs(),
-                terminationHandler: nil)
+            do {
+                process = try Process.run(
+                    processUrl,
+                    arguments: settings.useHeader ? [] : settings.toArgs(),
+                    terminationHandler: nil)
 
-            items[toggleTrackingItemIndex] = stopItem!
+                items[toggleTrackingItemIndex] = stopItem!
+            } catch {
+                alert(msg: "Cannot spawn process")
+            }
         }
 	}
 
