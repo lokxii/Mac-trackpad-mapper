@@ -40,13 +40,12 @@ typedef struct {
 	int32_t handID;		// "H" (always 1)
 	MTVector normalizedVector;
 	float zTotal;		// "ZTot" (~quality, multiple of 1/8 between 0 and 1)
-	int32_t field9;		// always 0
+	float pressure;     // Always whole number
 	float angle;
 	float majorAxis;
 	float minorAxis;
 	MTVector absoluteVector;	// "mm"
-	int32_t field14;	// always 0
-	int32_t field15;	// always 0
+    double contactArea;
 	float zDensity;		// "ZDen" (~density)
 } MTTouch;
 
