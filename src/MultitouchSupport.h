@@ -45,7 +45,8 @@ typedef struct {
 	float majorAxis;
 	float minorAxis;
 	MTVector absoluteVector;	// "mm"
-    double contactArea;
+    int32_t field14;
+    int32_t field15;
 	float zDensity;		// "ZDen" (~density)
 } MTTouch;
 
