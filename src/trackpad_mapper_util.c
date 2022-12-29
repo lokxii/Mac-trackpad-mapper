@@ -59,7 +59,22 @@ MTPoint _map(double normx, double normy) {
     return point;
 }
 
+void moveCursor(double x, double y) {
+
+    CGPoint point = {
+        .x = x,
+        .y = y,
+    };
+    CGWarpMouseCursorPosition(point);
+    
+}
+
 // moving cursor here increases sensitivity to finger
+// detecting gesture:
+// Beginning of a gesture may start with one finger or more than one fingers.
+// Simply checking how many fingers touched is not enough.
+// Discard coordinates of the first callback call for each cursor movement
+// and wait for the second call to make sure it is not a gesture.
 int trackpadCallback(
     MTDeviceRef device,
     MTTouch *data,
@@ -67,53 +82,101 @@ int trackpadCallback(
     double timestamp,
     size_t frame)
 {
+    #define GESTURE_PHASE_NONE 0
+    #define GESTURE_PHASE_MAYSTART 1
+    #define GESTURE_PHASE_BEGAN 2
+
     static MTPoint fingerPosition = { 0, 0 },
                    oldFingerPosition = { 0, 0 };
     static int32_t oldPathIndex = -1;
     static double oldTimeStamp = 0;
-    if (nFingers > 0) {
-        // remembers currently using which finger
-        MTTouch *f = &data[0];
-        for (int i = 0; i < nFingers; i++){
-            if (data[i].pathIndex == oldPathIndex) {
-                f = &data[i];
-                break;
-            }
-        }
-
-        oldFingerPosition = fingerPosition;
-        // use settings.h if no command line arguments are given
-        fingerPosition = (settings.useArg ? _map : map)(
-                f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
-        MTPoint velocity = f->normalizedVector.velocity;
-        
-        if (fingerPosition.x < 0 || fingerPosition.y < 0) {
-            // Only lock cursor when finger starts path on dead zone
-            if (f->pathIndex == oldPathIndex) {
-                if (fingerPosition.x < 0) {
-                    fingerPosition.x = oldFingerPosition.x +
-                        velocity.x * (timestamp - oldTimeStamp) * 1000;
-                }
-                if (fingerPosition.y < 0) {
-                    fingerPosition.y = oldFingerPosition.y -
-                        velocity.y * (timestamp - oldTimeStamp) * 1000;
-                }
-
-            } else {
-                fingerPosition = oldFingerPosition;
-            }
-        } else {
-            oldPathIndex = f->pathIndex;
-        }
-
-        CGPoint point = {
-            .x = fingerPosition.x,
-            .y = fingerPosition.y,
-        };
-        CGWarpMouseCursorPosition(point);
-
-        oldTimeStamp = timestamp;
+    static size_t oldFingerCount = 1;
+    static int gesturePhase = GESTURE_PHASE_NONE;
+    // FIXME: how many fingers can magic trackpad detect?
+    static bool gesturePaths[20] = { 0 };
+    
+    printf("%d %zu %zu ", gesturePhase, oldFingerCount, nFingers);
+    for (int i = 0; i < 20; i++){
+        printf("%d ", gesturePaths[i]);
     }
+    putc('\n', stdout);
+    
+    if (nFingers == 0) {
+        // all fingers lifted, clearing gesture fingers
+        for (int i = 0; i < 20; i++) {
+            gesturePaths[i] = false;
+        }
+        putc('\n', stdout);
+        gesturePhase = GESTURE_PHASE_NONE;
+        oldFingerCount = nFingers;
+        return 0;
+    }
+    
+    if (oldFingerCount != 1 && nFingers == 1 && !gesturePhase) {
+        gesturePhase = GESTURE_PHASE_MAYSTART;
+        oldFingerCount = nFingers;
+        return 0;
+    };
+    
+    // allow adding in more fingers when it is sure not a gesture
+    if (nFingers != 1 && gesturePhase != GESTURE_PHASE_NONE) {
+        gesturePhase = GESTURE_PHASE_BEGAN;
+        for (int i = 0; i < nFingers; i++) {
+            gesturePaths[data[i].pathIndex] = true;
+        }
+        moveCursor(fingerPosition.x, fingerPosition.y);
+        oldFingerCount = nFingers;
+        return 0;
+    };
+    
+    // keeping one finger on trackpad when lifting up fingers
+    // at the end of gesture
+    if (gesturePhase == GESTURE_PHASE_BEGAN) {
+        for (int i = 0; i < nFingers; i++) {
+            if (gesturePaths[data[i].pathIndex]) {
+                moveCursor(fingerPosition.x, fingerPosition.y);
+                return 0;
+            }
+        }
+    }
+
+    // remembers currently using which finger
+    MTTouch *f = &data[0];
+    for (int i = 0; i < nFingers; i++){
+        if (data[i].pathIndex == oldPathIndex) {
+            f = &data[i];
+            break;
+        }
+    }
+
+    oldFingerPosition = fingerPosition;
+    // use settings.h if no command line arguments are given
+    fingerPosition = (settings.useArg ? _map : map)(
+            f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
+    MTPoint velocity = f->normalizedVector.velocity;
+    
+    if (fingerPosition.x < 0 || fingerPosition.y < 0) {
+        // Only lock cursor when finger starts path on dead zone
+        if (f->pathIndex == oldPathIndex) {
+            if (fingerPosition.x < 0) {
+                fingerPosition.x = oldFingerPosition.x +
+                    velocity.x * (timestamp - oldTimeStamp) * 1000;
+            }
+            if (fingerPosition.y < 0) {
+                fingerPosition.y = oldFingerPosition.y -
+                    velocity.y * (timestamp - oldTimeStamp) * 1000;
+            }
+
+        } else {
+            fingerPosition = oldFingerPosition;
+        }
+    } else {
+        oldPathIndex = f->pathIndex;
+    }
+    
+    moveCursor(fingerPosition.x, fingerPosition.y);
+
+    oldTimeStamp = timestamp;
     return 0;
 }
 
