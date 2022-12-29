@@ -95,12 +95,6 @@ int trackpadCallback(
     // FIXME: how many fingers can magic trackpad detect?
     static bool gesturePaths[20] = { 0 };
     
-    printf("%d %zu %zu ", gesturePhase, oldFingerCount, nFingers);
-    for (int i = 0; i < 20; i++){
-        printf("%d ", gesturePaths[i]);
-    }
-    putc('\n', stdout);
-    
     if (nFingers == 0) {
         // all fingers lifted, clearing gesture fingers
         for (int i = 0; i < 20; i++) {
@@ -118,8 +112,7 @@ int trackpadCallback(
         return 0;
     };
     
-    // allow adding in more fingers when it is sure not a gesture
-    if (nFingers != 1 && gesturePhase != GESTURE_PHASE_NONE) {
+    if (nFingers != 1) {
         gesturePhase = GESTURE_PHASE_BEGAN;
         for (int i = 0; i < nFingers; i++) {
             gesturePaths[data[i].pathIndex] = true;
