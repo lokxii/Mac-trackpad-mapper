@@ -11,44 +11,46 @@ class MainMenu: NSMenu {
     let toggleTrackingItemIndex = 2
     let preferenceItemIndex = 3
 
-    let preferenceWindow: NSWindow = NSWindow.init(contentViewController: PreferenceViewController.init())
+    var preferenceWindow: NSWindow? = nil
 
     required init(coder: NSCoder) {
         super.init(coder: coder)
-    }
+		preferenceWindow = NSWindow(
+			contentViewController: PreferenceViewController(mainMenu: self))
+	}
 
     public init() {
         super.init(title: "")
 
         // Version
-        versionItem = NSMenuItem.init(
+        versionItem = NSMenuItem(
             title: "Version 0.0.1",
             action: nil,
             keyEquivalent: "")
 
         // Start process
-        startItem = NSMenuItem.init(
+        startItem = NSMenuItem(
                             title: "Start absolute tracking",
                             action: #selector(MainMenu.startProcess(_:)),
                             keyEquivalent: "s")
         startItem!.target = self
 
         // Stop process
-        stopItem = NSMenuItem.init(
+        stopItem = NSMenuItem(
                             title: "Stop absolute tracking",
                             action: #selector(MainMenu.stopProcess(_:)),
                             keyEquivalent: "s")
         stopItem!.target = self
 
         // Preference
-        preferenceItem = NSMenuItem.init(
+        preferenceItem = NSMenuItem(
                             title: "Preference",
                             action: #selector(MainMenu.openPreference(_:)),
                             keyEquivalent: ",")
         preferenceItem!.target = self
 
         // Quit app
-        quitItem = NSMenuItem.init(
+        quitItem = NSMenuItem(
                             title: "Quit trackpad mapper",
                             action: #selector(MainMenu.terminate(_:)),
                             keyEquivalent: "q")
@@ -60,6 +62,9 @@ class MainMenu: NSMenu {
         addItem(preferenceItem!)
         addItem(NSMenuItem.separator())
         addItem(quitItem!)
+
+		preferenceWindow = NSWindow(
+			contentViewController: PreferenceViewController(mainMenu: self))
     }
 
 	@objc
@@ -100,7 +105,7 @@ class MainMenu: NSMenu {
 
     @objc
     public func openPreference(_: Any?) {
-        preferenceWindow.makeKeyAndOrderFront(nil)
-        preferenceWindow.orderedIndex = 0
+        preferenceWindow!.makeKeyAndOrderFront(nil)
+        preferenceWindow!.orderedIndex = 0
     }
 }

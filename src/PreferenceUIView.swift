@@ -4,6 +4,8 @@ struct PreferenceUIView: View {
     @State private var useHeader: Bool = false
     @State private var trackpadRange: String = "0,0,1,1"
     @State private var screenRange: String = "0,0,1,1"
+    
+    var mainMenu: MainMenu
 
     var isValid: Bool {
         return Settings.Range.stringIsValid(string: trackpadRange,
@@ -25,10 +27,14 @@ struct PreferenceUIView: View {
         }
         Button (action: {
             if isValid && !useHeader {
-                settings.trackpadRange = Settings.Range.init(from: trackpadRange)
-                settings.screenRange = Settings.Range.init(from: screenRange)
+                settings.trackpadRange = Settings.Range(from: trackpadRange)
+                settings.screenRange = Settings.Range(from: screenRange)
             }
             settings.useHeader = useHeader
+            if mainMenu.process != nil {
+                mainMenu.stopProcess(nil)
+                mainMenu.startProcess(nil)
+            }
         }) {
             Text("Apply").padding()
         }
