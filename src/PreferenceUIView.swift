@@ -13,7 +13,7 @@ struct PreferenceUIView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack (alignment: .leading) {
             Toggle("Use settings in header file (settings.h)", isOn: $useHeader)
                 .toggleStyle(.checkbox)
             if (!useHeader) {
@@ -22,15 +22,15 @@ struct PreferenceUIView: View {
                     TextField("Screen region:", text: $screenRange)
                 }
             }
-            Button (action: {
-                if isValid && !useHeader {
-                    settings.trackpadRange = Settings.Range.init(from: trackpadRange)
-                    settings.screenRange = Settings.Range.init(from: screenRange)
-                }
-                settings.useHeader = useHeader
-            }) {
-                Text("Apply").padding()
+        }
+        Button (action: {
+            if isValid && !useHeader {
+                settings.trackpadRange = Settings.Range.init(from: trackpadRange)
+                settings.screenRange = Settings.Range.init(from: screenRange)
             }
+            settings.useHeader = useHeader
+        }) {
+            Text("Apply").padding()
         }
     }
 }
