@@ -85,11 +85,13 @@ int trackpadCallback(
     #define GESTURE_PHASE_NONE 0
     #define GESTURE_PHASE_MAYSTART 1
     #define GESTURE_PHASE_BEGAN 2
+    #define GESTURE_TIMEOUT 0.02
 
     static MTPoint fingerPosition = { 0, 0 },
                    oldFingerPosition = { 0, 0 };
     static int32_t oldPathIndex = -1;
-    static double oldTimeStamp = 0;
+    static double oldTimeStamp = 0,
+                  startTrackTimeStamp = 0;
     static size_t oldFingerCount = 1;
     static int gesturePhase = GESTURE_PHASE_NONE;
     // FIXME: how many fingers can magic trackpad detect?
@@ -100,10 +102,14 @@ int trackpadCallback(
         for (int i = 0; i < 20; i++) {
             gesturePaths[i] = false;
         }
-        putc('\n', stdout);
         gesturePhase = GESTURE_PHASE_NONE;
         oldFingerCount = nFingers;
+        startTrackTimeStamp = 0;
         return 0;
+    }
+    
+    if (!startTrackTimeStamp) {
+        startTrackTimeStamp = timestamp;
     }
     
     if (oldFingerCount != 1 && nFingers == 1 && !gesturePhase) {
@@ -112,7 +118,14 @@ int trackpadCallback(
         return 0;
     };
     
-    if (nFingers != 1) {
+    if (nFingers == 1 && timestamp - startTrackTimeStamp < GESTURE_TIMEOUT) {
+        return 0;
+    }
+    
+    if (nFingers != 1 && (
+        timestamp - startTrackTimeStamp < GESTURE_TIMEOUT ||
+        gesturePhase != GESTURE_PHASE_NONE))
+    {
         gesturePhase = GESTURE_PHASE_BEGAN;
         for (int i = 0; i < nFingers; i++) {
             gesturePaths[data[i].pathIndex] = true;
@@ -132,6 +145,8 @@ int trackpadCallback(
             }
         }
     }
+    
+    gesturePhase = GESTURE_PHASE_NONE;
 
     // remembers currently using which finger
     MTTouch *f = &data[0];
