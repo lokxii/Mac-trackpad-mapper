@@ -4,6 +4,7 @@ struct PreferenceUIView: View {
     @State private var useHeader: Bool = false
     @State private var trackpadRange: String = "0,0,1,1"
     @State private var screenRange: String = "0,0,1,1"
+    @State private var emitMouseEvent: Bool = false
     
     var mainMenu: MainMenu
 
@@ -23,6 +24,8 @@ struct PreferenceUIView: View {
                     TextField("Trackpad region:", text: $trackpadRange)
                     TextField("Screen region:", text: $screenRange)
                 }
+                Toggle("Emit mouse events", isOn: $emitMouseEvent)
+                    .toggleStyle(.checkbox)
             }
         }
         Button (action: {
@@ -30,7 +33,9 @@ struct PreferenceUIView: View {
                 settings.trackpadRange = Settings.Range(from: trackpadRange)
                 settings.screenRange = Settings.Range(from: screenRange)
             }
+            settings.emitMouseEvent = emitMouseEvent
             settings.useHeader = useHeader
+
             if mainMenu.process != nil {
                 mainMenu.stopProcess(nil)
                 mainMenu.startProcess(nil)

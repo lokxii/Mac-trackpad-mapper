@@ -37,6 +37,8 @@ The default settings are stored in `settings.def.h`. You may want to make a
 copy of it and rename it to `settings.h`. This is where all local settings are
 stored.
 
+### Mapping
+
 There is a function `map` in `settings.h` that converts normalized finger
 position on trackpad to absolute coordinate of cursor on Screen.
 `MTPoint map(double, double)` must be provided in `settings.h` as it will be
@@ -46,7 +48,7 @@ called in `trackpad_mapper_util.c`.
 MTPoint map(double normx, double normy) {
     // whole trackpad to whole screen
     MTPoint point = {
-        normx * screenSize.x, normy * screenSize.y
+        normx * screenSize.width, normy * screenSize.height
     };
     return point;
 }
@@ -72,27 +74,28 @@ MTPoint map(double normx, double normy) {
             //the top half (0 to 0.5) of the trackpad
             .y = rangeRatio(normy, 0, .5),
         };
-    point.x *= screenSize.x;
-    point.y *= screenSize.y;
+    point.x *= screenSize.width;
+    point.y *= screenSize.height;
     return point;
 }
 ```
 
 Remember to rebuild the util everytime you changed `map`.
 
-## Screen Size
+### Screen Size
 
-This code does not detect screen size. Instead there is a global constant that
-keeps track of screen size.
+`extern CGSize screenSize` declared in `settings.def.h` will be initialized in
+the main program. Do not remove the declaration.
 
-```C
-const MTPoint screenSize = { .x = 1440, .y = 900 };
-```
+The main program makes sure the mapped cursor coordinate is within `screenSize`
+to make the dock appear.
 
-Modifying this constant changes screen size.
+### Emitting mouse events
 
-Note that **trackpad mapper** does not validate screen size nor cursor
-coordinate. Validating cursor position is done by window server.
+It is possible choose between emitting mouse event or wrapping cursor coordinate
+(without mouse event). Some programs requires emitting mouse events but enabling
+it will cause the cursor not to magnify. Set `bool emitMouseEvent = true` to
+emit mouse event. The default value is `false`.
 
 ## Building
 

@@ -1,7 +1,9 @@
 #pragma once
 
-// Compulsory: Modify this according to your screen resolution
-const MTPoint screenSize = { .x = 1440, .y = 900 };
+// Do not remove this. This variable is initialized in main program
+extern CGSize screenSize;
+// Emit mouse event or wrap cursor. Default is warp cursor
+bool emitMouseEvent = false;
 
 // Helper function: lower and upper has to be without 0 to 1 inclusive
 static inline double rangeRatio(double n, double lower, double upper) {
@@ -19,7 +21,7 @@ static inline MTPoint map(double normx, double normy) {
         .y = normy,
     };
     //scaling the points up to the screen size
-    point.x *= screenSize.x;
-    point.y *= screenSize.y;
+    point.x *= screenSize.width;
+    point.y *= screenSize.height;
     return point;
 }

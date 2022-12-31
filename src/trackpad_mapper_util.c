@@ -15,17 +15,18 @@ typedef struct {
 } Range;
 
 typedef struct {
-    int width, height;
-} Screensize;
-
-typedef struct {
     bool useArg;
     Range trackpadRange;
     Range screenRange;
-    Screensize screensize;
+    bool emitMouseEvent;
 } Settings;
 
-Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, { 1440, 900 } };
+Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, false };
+CGSize screenSize;
+
+int mouseEventNumber = 0;
+pthread_mutex_t mouseEventNumber_mutex;
+#define MAGIC_NUMBER 12345
 
 double _rangeRatio(double n, double lower, double upper) {
     if (n < lower || n > upper) {
@@ -54,19 +55,36 @@ MTPoint _map(double normx, double normy) {
     point.y = _reverseRangeRatio(
             point.y, settings.screenRange.lowy, settings.screenRange.upy);
 
-    point.x *= settings.screensize.width;
-    point.y *= settings.screensize.height;
+    point.x *= screenSize.width;
+    point.y *= screenSize.height;
     return point;
 }
 
 void moveCursor(double x, double y) {
-
     CGPoint point = {
-        .x = x,
-        .y = y,
+        .x = x < 0 ? 0 : x >= screenSize.width ? screenSize.width - 1 : x,
+        .y = y < 0 ? 0 : y >= screenSize.height ? screenSize.height - 1: y,
     };
-    CGWarpMouseCursorPosition(point);
-    
+
+    if (settings.useArg && settings.emitMouseEvent ||
+        !settings.useArg && emitMouseEvent)
+    {
+        CGEventRef event = CGEventCreateMouseEvent(
+            NULL,
+            kCGEventMouseMoved,
+            point,
+            kCGMouseButtonLeft);
+        CGEventSetIntegerValueField(event, kCGEventSourceUserData, MAGIC_NUMBER);
+        CGEventSetIntegerValueField(event, kCGMouseEventSubtype, 3);
+
+        try(pthread_mutex_lock(&mouseEventNumber_mutex));
+        CGEventSetIntegerValueField(event, kCGMouseEventNumber, mouseEventNumber);
+        try(pthread_mutex_unlock(&mouseEventNumber_mutex));
+
+        CGEventPost(kCGHIDEventTap, event);
+    } else {
+        CGWarpMouseCursorPosition(point);
+    }
 }
 
 // moving cursor here increases sensitivity to finger
@@ -228,32 +246,9 @@ Range parseRange(char* s) {
     };
 }
 
-Screensize parseScreensize(char* s) {
-    puts(s);
-    char* token[2+1];
-    int i = 0;
-    for (;(token[i] = strsep(&s, "x")) != NULL && i < 2; i++) { }
-    if (i != 2 || token[2] != NULL) {
-        fputs("Size format: widthxheight", stderr);
-        exit(1);
-    }
-    int num[2];
-    for (i = 0; i < 2; i++){
-        char* endptr;
-        num[i] = strtof(token[i], &endptr);
-        if (*endptr) {
-            fprintf(stderr, "Invalid number %s\n", token[i]);
-            exit(1);
-        }
-    }
-    return (Screensize) {
-        num[0], num[1]
-    };
-}
-
 void parseSettings(int argc, char** argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:e")) != -1) {
         switch (opt) {
             case 'i':
                 settings.trackpadRange = parseRange(optarg);
@@ -263,23 +258,43 @@ void parseSettings(int argc, char** argv) {
                 settings.screenRange = parseRange(optarg);
                 settings.useArg = true;
                 break;
-            case 's':
-                settings.screensize = parseScreensize(optarg);
+            case 'e':
+                settings.emitMouseEvent = true;
                 settings.useArg = true;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-s widthxheight]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
 }
 
+CGEventRef loggerCallback(
+    CGEventTapProxy proxy,
+    CGEventType type,
+    CGEventRef event,
+    void* context)
+{
+    int magic_number = CGEventGetIntegerValueField(event, kCGEventSourceUserData);
+    if (magic_number == MAGIC_NUMBER) {
+        return event;
+    }
+    int eventNumber = CGEventGetIntegerValueField(event, kCGMouseEventNumber);
+    try(pthread_mutex_lock(&mouseEventNumber_mutex));
+    mouseEventNumber = eventNumber;
+    try(pthread_mutex_unlock(&mouseEventNumber_mutex));
+    return event;
+}
+
 int main(int argc, char** argv) {
-    // if (!check_privileges()) {
-    //     printf("Requires accessbility privileges\n");
-    //     return 1;
-    // }
+    if (!check_privileges()) {
+        printf("Requires accessbility privileges\n");
+        return 1;
+    }
     parseSettings(argc, argv);
+    screenSize = CGDisplayBounds(CGMainDisplayID()).size;
+    
+    try(pthread_mutex_init(&mouseEventNumber_mutex, NULL));
     
     // start trackpad service
     MTDeviceRef dev = MTDeviceCreateDefault();

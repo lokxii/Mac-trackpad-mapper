@@ -75,7 +75,7 @@ class MainMenu: NSMenu {
             do {
                 process = try Process.run(
                     processUrl,
-                    arguments: settings.useHeader ? [] : settings.toArgs(),
+                    arguments: settings.toArgs(),
                     terminationHandler: nil)
 
                 items[toggleTrackingItemIndex] = stopItem!

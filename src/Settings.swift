@@ -43,7 +43,7 @@ struct Settings: Codable {
     var useHeader: Bool = false
     var trackpadRange: Range? = nil
     var screenRange: Range? = nil
-    var screensize: NSRect = NSScreen.main!.frame 
+    var emitMouseEvent: Bool = false
 
     init(trackpad: Range? = nil, screen: Range? = nil) {
         trackpadRange = trackpad
@@ -52,16 +52,19 @@ struct Settings: Codable {
 
     func toArgs() -> [String] {
         var args: [String] = []
-        if let trackpadRange = trackpadRange {
-            args.append("-i")
-            args.append(trackpadRange.toString())
+        if useHeader {
+            if let trackpadRange = trackpadRange {
+                args.append("-i")
+                args.append(trackpadRange.toString())
+            }
+            if let screenRange = screenRange {
+                args.append("-o")
+                args.append(screenRange.toString())
+            }
+            if emitMouseEvent {
+                args.append("-e")
+            }
         }
-        if let screenRange = screenRange {
-            args.append("-o")
-            args.append(screenRange.toString())
-        }
-        args.append("-s")
-        args.append("\(screensize.width)x\(screensize.height)")
         return args
     }
 }
