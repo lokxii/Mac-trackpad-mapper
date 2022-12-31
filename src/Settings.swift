@@ -44,6 +44,7 @@ struct Settings: Codable {
     var trackpadRange: Range? = nil
     var screenRange: Range? = nil
     var emitMouseEvent: Bool = false
+    var tappingKeys: String = ""
 
     init(trackpad: Range? = nil, screen: Range? = nil) {
         trackpadRange = trackpad
@@ -52,7 +53,7 @@ struct Settings: Codable {
 
     func toArgs() -> [String] {
         var args: [String] = []
-        if useHeader {
+        if !useHeader {
             if let trackpadRange = trackpadRange {
                 args.append("-i")
                 args.append(trackpadRange.toString())
@@ -64,6 +65,10 @@ struct Settings: Codable {
             if emitMouseEvent {
                 args.append("-e")
             }
+        }
+        if tappingKeys != "" {
+            args.append("-t")
+            args.append(tappingKeys)
         }
         return args
     }

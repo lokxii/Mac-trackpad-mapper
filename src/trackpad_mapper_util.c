@@ -19,9 +19,18 @@ typedef struct {
     Range trackpadRange;
     Range screenRange;
     bool emitMouseEvent;
+    bool tapping;
+    CGKeyCode keys[2];
 } Settings;
 
-Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, false };
+Settings settings = {
+    .useArg = false,
+    .trackpadRange = { 0, 0, 1, 1 },
+    .screenRange = { 0, 0, 1, 1, },
+    .emitMouseEvent = false,
+    .tapping = false,
+    .keys = { kVK_ANSI_Z, kVK_ANSI_X }
+};
 CGSize screenSize;
 
 int mouseEventNumber = 0;
@@ -60,6 +69,15 @@ MTPoint _map(double normx, double normy) {
     return point;
 }
 
+bool inDeadZone(MTPoint point, MTPoint* fingerPosition) {
+    // use settings.h if no command line arguments are given
+    MTPoint p = (settings.useArg ? _map : map)( point.x, 1 - point.y);
+    if (fingerPosition) {
+        *fingerPosition = p;
+    }
+    return p.x < 0 || p.y < 0;
+}
+
 void moveCursor(double x, double y) {
     CGPoint point = {
         .x = x < 0 ? 0 : x >= screenSize.width ? screenSize.width - 1 : x,
@@ -84,6 +102,85 @@ void moveCursor(double x, double y) {
         CGEventPost(kCGHIDEventTap, event);
     } else {
         CGWarpMouseCursorPosition(point);
+    }
+}
+
+CGMouseButton chooseButton(int paths[2], int index) {
+    return paths[0] == index ? kCGMouseButtonLeft :
+           paths[1] == index ? kCGMouseButtonRight :
+           -1;
+}
+
+void keyEvent(bool down, CGMouseButton button, CGPoint point) {
+    // CGEventType type;
+    // switch (button) {
+    //     case kCGMouseButtonLeft:
+    //         type = down ? kCGEventLeftMouseDown : kCGEventLeftMouseUp; break;
+    //     case kCGMouseButtonRight:
+    //         type = down ? kCGEventRightMouseDown : kCGEventRightMouseUp; break;
+    // }
+    // CGEventRef event = CGEventCreateMouseEvent(
+    //     NULL, type, point, button);
+    // CGEventSetIntegerValueField(event, kCGEventSourceUserData, MAGIC_NUMBER);
+    CGEventRef event = CGEventCreateKeyboardEvent(NULL, settings.keys[button], down);
+    CGEventPost(kCGHIDEventTap, event);
+}
+
+void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
+    static int paths[2] = { -1, -1 };
+
+    CGMouseButton button = chooseButton(paths, -1);
+    CGPoint point = { .x = fingerPosition.x, .y = fingerPosition.y };
+
+    for (int i = 0; i < nFingers; i++) {
+        MTTouch* f = &data[i];
+        // mouse down
+        if (f->state == MTTouchStateMakeTouch) {
+            if (button == -1) {
+                continue;
+            }
+            if (f->pathIndex == paths[!button]) {
+                button = !button;
+                goto mouseup;
+            }
+            if (!inDeadZone(f->normalizedVector.position, NULL)) {
+                continue;
+            }
+            
+            keyEvent(true, button, point);
+            paths[button] = f->pathIndex;
+            button = chooseButton(paths, -1);
+        }
+        // mouse up
+        if (f->state == MTTouchStateOutOfRange) {
+            button = chooseButton(paths, f->pathIndex);
+            if (button == -1) {
+                continue;
+            }
+
+            mouseup:
+            keyEvent(false, button, point);
+            paths[button] = -1;
+            button = chooseButton(paths, -1);
+        }
+    }
+    // make sure non existing fingers are lift
+    for (button = 0; button < 2; button++) {
+        if (paths[button] == -1) {
+            continue;
+        }
+
+        bool found = false;
+        for (int i = 0; i < nFingers; i++) {
+            if (data[i].pathIndex == paths[button]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            keyEvent(false, button, point);
+            paths[button] = -1;
+        }
     }
 }
 
@@ -123,6 +220,7 @@ int trackpadCallback(
         gesturePhase = GESTURE_PHASE_NONE;
         oldFingerCount = nFingers;
         startTrackTimeStamp = 0;
+        generateClick(data, nFingers, fingerPosition);
         return 0;
     }
     
@@ -176,12 +274,9 @@ int trackpadCallback(
     }
 
     oldFingerPosition = fingerPosition;
-    // use settings.h if no command line arguments are given
-    fingerPosition = (settings.useArg ? _map : map)(
-            f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
     MTPoint velocity = f->normalizedVector.velocity;
     
-    if (fingerPosition.x < 0 || fingerPosition.y < 0) {
+    if (inDeadZone(f->normalizedVector.position, &fingerPosition)) {
         // Only lock cursor when finger starts path on dead zone
         if (f->pathIndex == oldPathIndex) {
             if (fingerPosition.x < 0) {
@@ -201,6 +296,7 @@ int trackpadCallback(
     }
     
     moveCursor(fingerPosition.x, fingerPosition.y);
+    generateClick(data, nFingers, fingerPosition);
 
     oldTimeStamp = timestamp;
     return 0;
@@ -246,9 +342,94 @@ Range parseRange(char* s) {
     };
 }
 
+// from https://stackoverflow.com/a/1971027
+/* Returns string representation of key, if it is printable.
+ * Ownership follows the Create Rule; that is, it is the caller's
+ * responsibility to release the returned object. */
+CFStringRef createStringForKey(CGKeyCode keyCode)
+{
+    TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
+    CFDataRef layoutData =
+        TISGetInputSourceProperty(currentKeyboard,
+                                  kTISPropertyUnicodeKeyLayoutData);
+    const UCKeyboardLayout *keyboardLayout =
+        (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
+
+    UInt32 keysDown = 0;
+    UniChar chars[4];
+    UniCharCount realLength;
+
+    UCKeyTranslate(keyboardLayout,
+                   keyCode,
+                   kUCKeyActionDisplay,
+                   0,
+                   LMGetKbdType(),
+                   kUCKeyTranslateNoDeadKeysBit,
+                   &keysDown,
+                   sizeof(chars) / sizeof(chars[0]),
+                   &realLength,
+                   chars);
+    CFRelease(currentKeyboard);    
+
+    return CFStringCreateWithCharacters(kCFAllocatorDefault, chars, 1);
+}
+
+/* Returns key code for given character via the above function, or UINT16_MAX
+ * on error. */
+CGKeyCode keyCodeForChar(const char c)
+{
+    static CFMutableDictionaryRef charToCodeDict = NULL;
+    CGKeyCode code;
+    UniChar character = c;
+    CFStringRef charStr = NULL;
+
+    /* Generate table of keycodes and characters. */
+    if (charToCodeDict == NULL) {
+        size_t i;
+        charToCodeDict = CFDictionaryCreateMutable(kCFAllocatorDefault,
+                                                   128,
+                                                   &kCFCopyStringDictionaryKeyCallBacks,
+                                                   NULL);
+        if (charToCodeDict == NULL) return UINT16_MAX;
+
+        /* Loop through every keycode (0 - 127) to find its current mapping. */
+        for (i = 0; i < 128; ++i) {
+            CFStringRef string = createStringForKey((CGKeyCode)i);
+            if (string != NULL) {
+                CFDictionaryAddValue(charToCodeDict, string, (const void *)i);
+                CFRelease(string);
+            }
+        }
+    }
+
+    charStr = CFStringCreateWithCharacters(kCFAllocatorDefault, &character, 1);
+
+    /* Our values may be NULL (0), so we need to use this function. */
+    if (!CFDictionaryGetValueIfPresent(charToCodeDict, charStr,
+                                       (const void **)&code)) {
+        code = UINT16_MAX;
+    }
+
+    CFRelease(charStr);
+    return code;
+}
+
+void parseTappingKeys(CGKeyCode keys[2], char* s) {
+    if (strlen(s) != 2) {
+        fputs("Expects 2 characters string for -t", stderr);
+        exit(1);
+    }
+    keys[0] = keyCodeForChar(s[0]);
+    keys[1] = keyCodeForChar(s[1]);
+    if (keys[0] == UINT16_MAX || keys[1] == UINT16_MAX) {
+        fputs("Invalid keys for -t", stderr);
+        exit(1);
+    }
+}
+
 void parseSettings(int argc, char** argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:e")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:et:")) != -1) {
         switch (opt) {
             case 'i':
                 settings.trackpadRange = parseRange(optarg);
@@ -262,8 +443,12 @@ void parseSettings(int argc, char** argv) {
                 settings.emitMouseEvent = true;
                 settings.useArg = true;
                 break;
+            case 't':
+                settings.tapping = true;
+                parseTappingKeys(settings.keys, optarg);
+                break;
             default:
-                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-t keys] [-e]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
@@ -279,11 +464,40 @@ CGEventRef loggerCallback(
     if (magic_number == MAGIC_NUMBER) {
         return event;
     }
-    int eventNumber = CGEventGetIntegerValueField(event, kCGMouseEventNumber);
-    try(pthread_mutex_lock(&mouseEventNumber_mutex));
-    mouseEventNumber = eventNumber;
-    try(pthread_mutex_unlock(&mouseEventNumber_mutex));
-    return event;
+    switch (type) {
+        case kCGEventMouseMoved: {
+            int eventNumber = CGEventGetIntegerValueField(event, kCGMouseEventNumber);
+            try(pthread_mutex_lock(&mouseEventNumber_mutex));
+            mouseEventNumber = eventNumber;
+            try(pthread_mutex_unlock(&mouseEventNumber_mutex));
+            return event;
+        }
+        default:
+            if (settings.tapping) {
+                return NULL;
+            } else {
+                return event;
+            }
+    }
+}
+
+void hookMouseCallback() {
+    CGEventMask mask = 1 << kCGEventMouseMoved; // |
+                       // 1 << kCGEventLeftMouseDown |
+                       // 1 << kCGEventLeftMouseUp |
+                       // 1 << kCGEventRightMouseDown |
+                       // 1 << kCGEventRightMouseUp;
+    CFMachPortRef tap = CGEventTapCreate(
+        kCGHIDEventTap,
+        kCGHeadInsertEventTap,
+        kCGEventTapOptionDefault,
+        mask,
+        loggerCallback,
+        NULL);
+    CFRunLoopSourceRef runLoopSource = CFMachPortCreateRunLoopSource(
+        kCFAllocatorDefault, tap, 0);
+    CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, kCFRunLoopCommonModes);
+    CGEventTapEnable(tap, true);
 }
 
 int main(int argc, char** argv) {
@@ -300,6 +514,8 @@ int main(int argc, char** argv) {
     MTDeviceRef dev = MTDeviceCreateDefault();
     MTRegisterContactFrameCallback(dev, (MTFrameCallbackFunction)trackpadCallback);
     MTDeviceStart(dev, 0);
+    
+    hookMouseCallback();
 
     // simply an infinite loop waiting for app to quit
     CFRunLoopRun();
