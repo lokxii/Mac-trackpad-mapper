@@ -22,6 +22,8 @@ In the preference window, there are three items:
 1. - [ ] Use settings in header file (settings.h)
 2. Trackpad region: [Region]
 3. Screen region: [Region]
+4. - [ ] Emit mouse events
+5. Tapping keys; [Keys]
 
 If you want to use your custom code to map coordinates, enable the first item.
 (See Modifying rule in header file)
@@ -30,6 +32,14 @@ The syntax of [Region] is `lowx,lowy,upx,upy`, where all numbers are floats in
 range 0 to 1 inclusively. These numbers are passed as command line arguments to
 `trackpad_mapper_util`. Click `Apply` to update the settings and remember to
 restart absolute tracking.
+
+Emit mouse events option can also be set in `settings.h`. See
+[Emitting Mouse Events](#emitting-mouse-events)
+
+Tapping keys can only be set here. [Keys] expects a 2 characters string. The
+first key press is simulated when only one finger is down. The second key press
+is simulated when the second finger is down while the first finger already touches
+the trackpad. An empty string in [Keys] means disabling the option.
 
 ## Modifying rule in header file
 
@@ -80,7 +90,7 @@ MTPoint map(double normx, double normy) {
 }
 ```
 
-Remember to rebuild the util everytime you changed `map`.
+Remember to rebuild the util everytime you changed `map`. See [Rebuilding Util](#rebuilding-util)
 
 ### Screen Size
 
