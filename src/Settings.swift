@@ -44,7 +44,7 @@ struct Settings: Codable {
     var trackpadRange: Range? = nil
     var screenRange: Range? = nil
     var emitMouseEvent: Bool = false
-    var tappingKeys: String = ""
+    var tappingKey: String = ""
 
     init(trackpad: Range? = nil, screen: Range? = nil) {
         trackpadRange = trackpad
@@ -66,9 +66,9 @@ struct Settings: Codable {
                 args.append("-e")
             }
         }
-        if tappingKeys != "" {
+        if tappingKey != "" {
             args.append("-t")
-            args.append(tappingKeys)
+            args.append(tappingKey)
         }
         return args
     }

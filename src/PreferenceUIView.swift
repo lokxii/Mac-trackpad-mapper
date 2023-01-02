@@ -5,7 +5,7 @@ struct PreferenceUIView: View {
     @State private var trackpadRange: String = "0,0,1,1"
     @State private var screenRange: String = "0,0,1,1"
     @State private var emitMouseEvent: Bool = false
-    @State private var tappingKeys: String = ""
+    @State private var tappingKey: String = ""
     
     var mainMenu: MainMenu
 
@@ -29,7 +29,7 @@ struct PreferenceUIView: View {
                     .toggleStyle(.checkbox)
             }
             Form {
-                TextField("Tapping keys", text: $tappingKeys)
+                TextField("Tapping key", text: $tappingKey)
             }
         }
         Button (action: {
@@ -38,11 +38,11 @@ struct PreferenceUIView: View {
                 settings.screenRange = Settings.Range(from: screenRange)
             }
             settings.emitMouseEvent = emitMouseEvent
-            settings.tappingKeys = tappingKeys
-            if tappingKeys.count == 0 || tappingKeys.count == 2 {
-                settings.tappingKeys = tappingKeys
+            if tappingKey.count == 0 || tappingKey.count == 1 {
+                settings.tappingKey = tappingKey
             } else {
-                trackpad_mapper.alert(msg: "Expects empty string or 2 characters string for tapping keys")
+                trackpad_mapper.alert(
+                    msg: "Expects empty string or a character for tapping key")
             }
             settings.useHeader = useHeader
 
