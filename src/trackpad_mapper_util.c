@@ -22,7 +22,7 @@ typedef struct {
     Range screenRange;
     bool emitMouseEvent;
     bool tapping;
-    CGKeyCode key;
+    CGKeyCode keys[2];
 } Settings;
 
 Settings settings = {
@@ -31,7 +31,7 @@ Settings settings = {
     .screenRange = { 0, 0, 1, 1, },
     .emitMouseEvent = false,
     .tapping = false,
-    .key = kVK_ANSI_Z,
+    .keys = { kVK_ANSI_Z, kVK_ANSI_X },
 };
 CGSize screenSize;
 
@@ -114,7 +114,9 @@ void keyEvent(bool down, CGPoint point) {
         NULL, type, point, 0);
     CGEventSetIntegerValueField(event, kCGEventSourceUserData, MAGIC_NUMBER);
 #else
-    CGEventRef event = CGEventCreateKeyboardEvent(NULL, settings.key, down);
+    static int keynum = 0;
+    keynum = (keynum + down) % 2;
+    CGEventRef event = CGEventCreateKeyboardEvent(NULL, settings.keys[keynum], down);
 #endif
     CGEventPost(kCGHIDEventTap, event);
 }
@@ -145,6 +147,7 @@ void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
     // find if other fingers down
     for (int i = 0; i < nFingers; i++) {
         if (data[i].state == MTTouchStateMakeTouch && data[i].pathIndex != path && inDeadZone(data[i].normalizedVector.position, NULL)) {
+            usleep(5000);
             keyEvent(false, point);
             usleep(5000);
             keyEvent(true, point);
@@ -413,17 +416,17 @@ CGKeyCode keyCodeForChar(const char c)
     return code;
 }
 
-CGKeyCode parseTappingKey(char* s) {
-    if (strlen(s) != 1) {
-        fputs("Expects 1 character for -t", stderr);
+void parseTappingKey(CGKeyCode keys[2], char* s) {
+    if (strlen(s) != 2) {
+        fputs("Expects 2 character for -t", stderr);
         exit(1);
     }
-    CGKeyCode key = keyCodeForChar(s[0]);
-    if (key == UINT16_MAX) {
+    keys[0] = keyCodeForChar(s[0]);
+    keys[1] = keyCodeForChar(s[1]);
+    if (keys[0] == UINT16_MAX || keys[1] == UINT16_MAX) {
         fputs("Invalid key for -t", stderr);
         exit(1);
     }
-    return key;
 }
 
 void parseSettings(int argc, char** argv) {
@@ -444,7 +447,7 @@ void parseSettings(int argc, char** argv) {
                 break;
             case 't':
                 settings.tapping = true;
-                settings.key = parseTappingKey(optarg);
+                parseTappingKey(settings.keys, optarg);
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-t key] [-e]\n", argv[0]);
@@ -504,10 +507,10 @@ void hookMouseCallback() {
 }
 
 int main(int argc, char** argv) {
-    if (!check_privileges()) {
-        printf("Requires accessbility privileges\n");
-        return 1;
-    }
+    // if (!check_privileges()) {
+    //     printf("Requires accessbility privileges\n");
+    //     return 1;
+    // }
     parseSettings(argc, argv);
     screenSize = CGDisplayBounds(CGMainDisplayID()).size;
     

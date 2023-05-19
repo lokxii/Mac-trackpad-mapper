@@ -18,8 +18,8 @@
 	<string>0.0.1</string>
 	<key>CFBundleVersion</key>
 	<string>0.0.1</string>
-    <key>CFBundleIconFile</key>
-    <string>trackpad_mapper</string>
+	<key>CFBundleIconFile</key>
+	<string>trackpad_mapper</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSUIElement</key>

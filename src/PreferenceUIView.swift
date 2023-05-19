@@ -38,11 +38,11 @@ struct PreferenceUIView: View {
                 settings.screenRange = Settings.Range(from: screenRange)
             }
             settings.emitMouseEvent = emitMouseEvent
-            if tappingKey.count == 0 || tappingKey.count == 1 {
+            if tappingKey.count == 0 || tappingKey.count == 2 {
                 settings.tappingKey = tappingKey
             } else {
                 trackpad_mapper.alert(
-                    msg: "Expects empty string or a character for tapping key")
+                    msg: "Expects empty string or 2 character string for tapping keys")
             }
             settings.useHeader = useHeader
 
