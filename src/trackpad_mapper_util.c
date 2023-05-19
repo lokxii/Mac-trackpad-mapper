@@ -287,10 +287,10 @@ CGEventRef loggerCallback(
 }
 
 int main(int argc, char** argv) {
-    if (!check_privileges()) {
-        printf("Requires accessbility privileges\n");
-        return 1;
-    }
+    // if (!check_privileges()) {
+    //     printf("Requires accessbility privileges\n");
+    //     return 1;
+    // }
     parseSettings(argc, argv);
     screenSize = CGDisplayBounds(CGMainDisplayID()).size;
     

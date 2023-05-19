@@ -1,6 +1,7 @@
 import Cocoa
 import Foundation
 import SwiftUI
+import ApplicationServices
 
 func alert(msg: String = "") {
     let alert = NSAlert.init()
@@ -15,6 +16,14 @@ func main() {
     let _ = NSApplication.shared
     NSApp.setActivationPolicy(.regular)
     NSApp.activate(ignoringOtherApps: true)
+
+    // Check accessibility
+    let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
+    let options = [checkOptPrompt: true] as CFDictionary?
+
+    if (!AXIsProcessTrustedWithOptions(options)) {
+        return
+    }
 
     // create status bar item
     let statusItem = NSStatusBar.system.statusItem(
