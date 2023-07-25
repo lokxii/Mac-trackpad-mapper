@@ -27,9 +27,9 @@ struct PreferenceUIView: View {
                 }
                 Toggle("Emit mouse events", isOn: $emitMouseEvent)
                     .toggleStyle(.checkbox)
-            }
-            Form {
-                TextField("Tapping key", text: $tappingKey)
+                Form {
+                    TextField("Tapping key", text: $tappingKey)
+                }
             }
         }
         Button (action: {

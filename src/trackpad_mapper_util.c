@@ -1,7 +1,7 @@
-#include <CoreFoundation/CoreFoundation.h>
-#include <pthread.h>
 #include <Carbon/Carbon.h>
+#include <CoreFoundation/CoreFoundation.h>
 #include <CoreGraphics/CoreGraphics.h>
+#include <pthread.h>
 #include "MultitouchSupport.h"
 #include "../settings.h"
 
@@ -117,14 +117,15 @@ void keyEvent(bool down, CGPoint point) {
 #else
     static int keynum = 0;
     keynum = (keynum + down) % 2;
-    CGEventRef event = CGEventCreateKeyboardEvent(NULL, settings.keys[keynum], down);
+    CGKeyCode* keys = settings.useArg ? settings.keys : tappingKeys;
+    CGEventRef event = CGEventCreateKeyboardEvent(NULL, keys[keynum], down);
 #endif
     CGEventPost(kCGHIDEventTap, event);
 }
 
 void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
     static int path = -1;
-    if (!settings.tapping) {
+    if (settings.useArg ? !settings.tapping : !tapping) {
         return;
     }
     
@@ -208,12 +209,12 @@ int trackpadCallback(
     static int gesturePhase = GESTURE_PHASE_NONE;
     // FIXME: how many fingers can magic trackpad detect?
     static bool gesturePaths[20] = { 0 };
-    
+
     // initialization
     if (isnan(fingerPosition.x)) {
         fingerPosition = oldFingerPosition = getMouseLocation();
     }
-    
+
     if (nFingers == 0) {
         // all fingers lifted, clearing gesture fingers
         for (int i = 0; i < 20; i++) {
@@ -227,21 +228,21 @@ int trackpadCallback(
     }
 
     generateClick(data, nFingers, fingerPosition);
-    
+
     if (!startTrackTimeStamp) {
         startTrackTimeStamp = timestamp;
     }
-    
+
     if (oldFingerCount != 1 && nFingers == 1 && !gesturePhase) {
         gesturePhase = GESTURE_PHASE_MAYSTART;
         oldFingerCount = nFingers;
         return 0;
     };
-    
+
     if (nFingers == 1 && timestamp - startTrackTimeStamp < GESTURE_TIMEOUT) {
         return 0;
     }
-    
+
     if (nFingers != 1 && (
         timestamp - startTrackTimeStamp < GESTURE_TIMEOUT ||
         gesturePhase != GESTURE_PHASE_NONE))
@@ -254,7 +255,7 @@ int trackpadCallback(
         oldFingerCount = nFingers;
         return 0;
     };
-    
+
     // keeping one finger on trackpad when lifting up fingers
     // at the end of gesture
     if (gesturePhase == GESTURE_PHASE_BEGAN) {
@@ -265,7 +266,7 @@ int trackpadCallback(
             }
         }
     }
-    
+
     gesturePhase = GESTURE_PHASE_NONE;
 
     // remembers currently using which finger
@@ -279,7 +280,7 @@ int trackpadCallback(
 
     oldFingerPosition = fingerPosition;
     MTPoint velocity = f->normalizedVector.velocity;
-    
+
     if (outsideMapRange(f->normalizedVector.position, &fingerPosition)) {
         // Only lock cursor when finger starts path on dead zone
         if (f->pathIndex == oldPathIndex) {
@@ -451,6 +452,7 @@ void parseSettings(int argc, char** argv) {
             case 't':
                 settings.tapping = true;
                 parseTappingKey(settings.keys, optarg);
+                settings.useArg = true;
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-t key] [-e]\n", argv[0]);
@@ -512,14 +514,14 @@ void hookMouseCallback() {
 int main(int argc, char** argv) {
     parseSettings(argc, argv);
     screenSize = CGDisplayBounds(CGMainDisplayID()).size;
-    
+
     try(pthread_mutex_init(&mouseEventNumber_mutex, NULL));
-    
+
     // start trackpad service
     MTDeviceRef dev = MTDeviceCreateDefault();
     MTRegisterContactFrameCallback(dev, (MTFrameCallbackFunction)trackpadCallback);
     MTDeviceStart(dev, 0);
-    
+
     hookMouseCallback();
 
     // simply an infinite loop waiting for app to quit
