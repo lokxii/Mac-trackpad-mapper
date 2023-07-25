@@ -71,7 +71,7 @@ MTPoint _map(double normx, double normy) {
     return point;
 }
 
-bool inDeadZone(MTPoint point, MTPoint* fingerPosition) {
+bool inMapRange(MTPoint point, MTPoint* fingerPosition) {
     // use settings.h if no command line arguments are given
     MTPoint p = (settings.useArg ? _map : map)(point.x, 1 - point.y);
     if (fingerPosition) {
@@ -131,7 +131,7 @@ void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
     // first tapping
     if (path == -1) {
         for (int i = 0; i < nFingers; i++) {
-            if (data[i].state == MTTouchStateMakeTouch && inDeadZone(data[i].normalizedVector.position, NULL)) {
+            if (data[i].state == MTTouchStateMakeTouch && inMapRange(data[i].normalizedVector.position, NULL)) {
                 keyEvent(true, point);
                 path = data[i].pathIndex;
             }
@@ -146,8 +146,8 @@ void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
     }
     // find if other fingers down
     for (int i = 0; i < nFingers; i++) {
-        if (data[i].state == MTTouchStateMakeTouch && data[i].pathIndex != path && inDeadZone(data[i].normalizedVector.position, NULL)) {
-            usleep(5000);
+        if (data[i].state == MTTouchStateMakeTouch && data[i].pathIndex != path && inMapRange(data[i].normalizedVector.position, NULL)) {
+            // usleep(5000);
             keyEvent(false, point);
             usleep(5000);
             keyEvent(true, point);
@@ -279,7 +279,7 @@ int trackpadCallback(
     oldFingerPosition = fingerPosition;
     MTPoint velocity = f->normalizedVector.velocity;
     
-    if (inDeadZone(f->normalizedVector.position, &fingerPosition)) {
+    if (inMapRange(f->normalizedVector.position, &fingerPosition)) {
         // Only lock cursor when finger starts path on dead zone
         if (f->pathIndex == oldPathIndex) {
             if (fingerPosition.x < 0) {
@@ -507,6 +507,7 @@ void hookMouseCallback() {
 }
 
 int main(int argc, char** argv) {
+    puts("start util");
     // if (!check_privileges()) {
     //     printf("Requires accessbility privileges\n");
     //     return 1;

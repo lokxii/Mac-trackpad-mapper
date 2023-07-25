@@ -1,7 +1,7 @@
 import Cocoa
 
 class MainMenu: NSMenu {
-	var process: Process? = nil
+    var process: Process? = nil
     var versionItem: NSMenuItem? = nil
     var startItem: NSMenuItem? = nil
     var stopItem: NSMenuItem? = nil
@@ -15,9 +15,9 @@ class MainMenu: NSMenu {
 
     required init(coder: NSCoder) {
         super.init(coder: coder)
-		preferenceWindow = NSWindow(
-			contentViewController: PreferenceViewController(mainMenu: self))
-	}
+        preferenceWindow = NSWindow(
+            contentViewController: PreferenceViewController(mainMenu: self))
+    }
 
     public init() {
         super.init(title: "")
@@ -63,12 +63,12 @@ class MainMenu: NSMenu {
         addItem(NSMenuItem.separator())
         addItem(quitItem!)
 
-		preferenceWindow = NSWindow(
-			contentViewController: PreferenceViewController(mainMenu: self))
+        preferenceWindow = NSWindow(
+            contentViewController: PreferenceViewController(mainMenu: self))
     }
 
-	@objc
-	public func startProcess(_: Any?) {
+    @objc
+    public func startProcess(_: Any?) {
         if process == nil {
             var processUrl = Bundle.main.bundleURL
             processUrl.appendPathComponent("Contents/MacOS/trackpad_mapper_util")
@@ -83,25 +83,25 @@ class MainMenu: NSMenu {
                 alert(msg: "Cannot spawn process")
             }
         }
-	}
+    }
 
-	@objc
-	public func stopProcess(_: Any?) {
-		if let process = process {
-			process.terminate()
-			self.process = nil
+    @objc
+    public func stopProcess(_: Any?) {
+        if let process = process {
+            process.terminate()
+            self.process = nil
 
             items[toggleTrackingItemIndex] = startItem!
-		}
-	}
-	
-	@objc
-	public func terminate(_: Any?) {
-		if let process = process {
-			process.terminate()
-		}
-		NSApp.terminate(nil)
-	}
+        }
+    }
+    
+    @objc
+    public func terminate(_: Any?) {
+        if let process = process {
+            process.terminate()
+        }
+        NSApp.terminate(nil)
+    }
 
     @objc
     public func openPreference(_: Any?) {

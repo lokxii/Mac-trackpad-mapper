@@ -13,8 +13,16 @@ var settings: Settings = Settings()
 
 func main() {
     let _ = NSApplication.shared
-    NSApp.setActivationPolicy(.regular)
+    NSApp.setActivationPolicy(.accessory)
     NSApp.activate(ignoringOtherApps: true)
+
+    // Check accessibility
+    let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
+    let options = [checkOptPrompt: true] as CFDictionary?
+
+    if (!AXIsProcessTrustedWithOptions(options)) {
+        return
+    }
 
     // create status bar item
     let statusItem = NSStatusBar.system.statusItem(
