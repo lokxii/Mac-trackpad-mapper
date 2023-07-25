@@ -1,3 +1,4 @@
+#include <CoreFoundation/CoreFoundation.h>
 #include <pthread.h>
 #include <Carbon/Carbon.h>
 #include <CoreGraphics/CoreGraphics.h>
@@ -71,7 +72,7 @@ MTPoint _map(double normx, double normy) {
     return point;
 }
 
-bool inMapRange(MTPoint point, MTPoint* fingerPosition) {
+bool outsideMapRange(MTPoint point, MTPoint* fingerPosition) {
     // use settings.h if no command line arguments are given
     MTPoint p = (settings.useArg ? _map : map)(point.x, 1 - point.y);
     if (fingerPosition) {
@@ -131,7 +132,7 @@ void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
     // first tapping
     if (path == -1) {
         for (int i = 0; i < nFingers; i++) {
-            if (data[i].state == MTTouchStateMakeTouch && inMapRange(data[i].normalizedVector.position, NULL)) {
+            if (data[i].state == MTTouchStateMakeTouch && outsideMapRange(data[i].normalizedVector.position, NULL)) {
                 keyEvent(true, point);
                 path = data[i].pathIndex;
             }
@@ -146,7 +147,7 @@ void generateClick(MTTouch* data, size_t nFingers, MTPoint fingerPosition) {
     }
     // find if other fingers down
     for (int i = 0; i < nFingers; i++) {
-        if (data[i].state == MTTouchStateMakeTouch && data[i].pathIndex != path && inMapRange(data[i].normalizedVector.position, NULL)) {
+        if (data[i].state == MTTouchStateMakeTouch && data[i].pathIndex != path && outsideMapRange(data[i].normalizedVector.position, NULL)) {
             // usleep(5000);
             keyEvent(false, point);
             usleep(5000);
@@ -279,7 +280,7 @@ int trackpadCallback(
     oldFingerPosition = fingerPosition;
     MTPoint velocity = f->normalizedVector.velocity;
     
-    if (inMapRange(f->normalizedVector.position, &fingerPosition)) {
+    if (outsideMapRange(f->normalizedVector.position, &fingerPosition)) {
         // Only lock cursor when finger starts path on dead zone
         if (f->pathIndex == oldPathIndex) {
             if (fingerPosition.x < 0) {
@@ -387,7 +388,6 @@ CGKeyCode keyCodeForChar(const char c)
 
     /* Generate table of keycodes and characters. */
     if (charToCodeDict == NULL) {
-        size_t i;
         charToCodeDict = CFDictionaryCreateMutable(kCFAllocatorDefault,
                                                    128,
                                                    &kCFCopyStringDictionaryKeyCallBacks,
@@ -395,10 +395,11 @@ CGKeyCode keyCodeForChar(const char c)
         if (charToCodeDict == NULL) return UINT16_MAX;
 
         /* Loop through every keycode (0 - 127) to find its current mapping. */
-        for (i = 0; i < 128; ++i) {
-            CFStringRef string = createStringForKey((CGKeyCode)i);
+        for (code = 0; code < 128; ++code) {
+            CFStringRef string = createStringForKey((CGKeyCode)code);
+            CFNumberRef n = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt16Type, &code);
             if (string != NULL) {
-                CFDictionaryAddValue(charToCodeDict, string, (const void *)i);
+                CFDictionaryAddValue(charToCodeDict, string, n);
                 CFRelease(string);
             }
         }
@@ -406,13 +407,15 @@ CGKeyCode keyCodeForChar(const char c)
 
     charStr = CFStringCreateWithCharacters(kCFAllocatorDefault, &character, 1);
 
+    CFNumberRef n;
     /* Our values may be NULL (0), so we need to use this function. */
     if (!CFDictionaryGetValueIfPresent(charToCodeDict, charStr,
-                                       (const void **)&code)) {
+                                       (const void **)&n)) {
         code = UINT16_MAX;
     }
 
     CFRelease(charStr);
+    CFNumberGetValue(n, kCFNumberSInt16Type, &code);
     return code;
 }
 
@@ -507,11 +510,6 @@ void hookMouseCallback() {
 }
 
 int main(int argc, char** argv) {
-    puts("start util");
-    // if (!check_privileges()) {
-    //     printf("Requires accessbility privileges\n");
-    //     return 1;
-    // }
     parseSettings(argc, argv);
     screenSize = CGDisplayBounds(CGMainDisplayID()).size;
     
