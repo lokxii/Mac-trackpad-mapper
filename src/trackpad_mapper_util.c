@@ -297,9 +297,20 @@ int main(int argc, char** argv) {
     try(pthread_mutex_init(&mouseEventNumber_mutex, NULL));
     
     // start trackpad service
-    MTDeviceRef dev = MTDeviceCreateDefault();
-    MTRegisterContactFrameCallback(dev, (MTFrameCallbackFunction)trackpadCallback);
-    MTDeviceStart(dev, 0);
+    // https://github.com/JitouchApp/Jitouch-project/blob/3b5018e4bc839426a6ce0917cea6df753d19da10/Application/Gesture.m#L2926-L2954
+    CFArrayRef deviceList = MTDeviceCreateList();
+    for (CFIndex i = 0; i < CFArrayGetCount(deviceList); i++) {
+        MTDeviceRef device = (MTDeviceRef)CFArrayGetValueAtIndex(deviceList, i);
+        int familyId;
+        MTDeviceGetFamilyID(device, &familyId);
+        if (
+            familyId >= 98
+            && familyId != 112 && familyId != 113  // Magic Mouse 1&2 / 3
+        ) {
+            MTRegisterContactFrameCallback(device, (MTFrameCallbackFunction)trackpadCallback);
+            MTDeviceStart(device, 0);
+        }
+    }
 
     // simply an infinite loop waiting for app to quit
     CFRunLoopRun();
