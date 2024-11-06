@@ -13,7 +13,7 @@ struct Settings: Codable {
         init?(from string: String) {
             if Settings.Range.stringIsValid(string: string) {
                 let compoenents = string.components(separatedBy: ",")
-                                        .map { CGFloat(Float($0)!) }
+                    .map { CGFloat(Float($0)!) }
                 low = NSPoint(x: compoenents[0], y: compoenents[1])
                 up = NSPoint(x: compoenents[2], y: compoenents[3])
             } else {
@@ -27,12 +27,11 @@ struct Settings: Codable {
 
         static func stringIsValid(string: String, name: String = "") -> Bool {
             let components = string.components(separatedBy: ",")
-                                   .map({ (s: String) -> Bool in
-                                       let f = Float(s)
-                                       return f != nil && (0.0...1.0).contains(f!)
-                                   })
-            let isValid = components.count == 4 &&
-                          components.reduce(true) { $0 && $1 }
+                .map({ (s: String) -> Bool in
+                    let f = Float(s)
+                    return f != nil && (0.0...1.0).contains(f!)
+                })
+            let isValid = components.count == 4 && components.reduce(true) { $0 && $1 }
             if !isValid && name != "" {
                 alert(msg: name + " range not valid")
             }
@@ -44,6 +43,7 @@ struct Settings: Codable {
     var trackpadRange: Range? = nil
     var screenRange: Range? = nil
     var emitMouseEvent: Bool = false
+    var requireCommandKey: Bool = true
 
     init(trackpad: Range? = nil, screen: Range? = nil) {
         trackpadRange = trackpad
@@ -52,7 +52,7 @@ struct Settings: Codable {
 
     func toArgs() -> [String] {
         var args: [String] = []
-        if useHeader {
+        if !useHeader {
             if let trackpadRange = trackpadRange {
                 args.append("-i")
                 args.append(trackpadRange.toString())
@@ -63,6 +63,9 @@ struct Settings: Codable {
             }
             if emitMouseEvent {
                 args.append("-e")
+            }
+            if requireCommandKey {
+                args.append("-c")
             }
         }
         return args

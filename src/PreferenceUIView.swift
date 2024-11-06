@@ -1,40 +1,58 @@
+import Cocoa
 import SwiftUI
 
 struct PreferenceUIView: View {
     @State private var useHeader: Bool = false
-    @State private var trackpadRange: String = "0,0,1,1"
+    @State private var trackpadRange: String = "0.05,0.1,0.95,0.9"
     @State private var screenRange: String = "0,0,1,1"
-    @State private var emitMouseEvent: Bool = false
-    
+    @State private var emitMouseEvent: Bool = true
+    @State private var requireCommandKey: Bool = true
+
     var mainMenu: MainMenu
+    @State private var localSettings = settings
 
     var isValid: Bool {
-        return Settings.Range.stringIsValid(string: trackpadRange,
-                                            name: "Trackpad region") &&
-               Settings.Range.stringIsValid(string: screenRange,
-                                            name: "Screen region")
+        return Settings.Range.stringIsValid(
+            string: trackpadRange,
+            name: "Trackpad region")
+            && Settings.Range.stringIsValid(
+                string: screenRange,
+                name: "Screen region")
     }
 
     var body: some View {
-        VStack (alignment: .leading) {
+        VStack(alignment: .leading) {
             Toggle("Use settings in header file (settings.h)", isOn: $useHeader)
                 .toggleStyle(.checkbox)
-            if (!useHeader) {
+            if !useHeader {
                 Form {
-                    TextField("Trackpad region:", text: $trackpadRange)
-                    TextField("Screen region:", text: $screenRange)
+                    HStack {
+                        Text("Trackpad region:")
+                        TextField("", text: $trackpadRange)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    HStack {
+                        Text("Screen region:")
+                        TextField("", text: $screenRange)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
                 }
                 Toggle("Emit mouse events", isOn: $emitMouseEvent)
                     .toggleStyle(.checkbox)
+                Toggle("Activate only while ⌘ pressed", isOn: $requireCommandKey)
+                    .toggleStyle(.checkbox)
             }
         }
-        Button (action: {
+        .padding()
+        Button(action: {
             if isValid && !useHeader {
-                settings.trackpadRange = Settings.Range(from: trackpadRange)
-                settings.screenRange = Settings.Range(from: screenRange)
+                localSettings.trackpadRange = Settings.Range(from: trackpadRange)
+                localSettings.screenRange = Settings.Range(from: screenRange)
             }
-            settings.emitMouseEvent = emitMouseEvent
-            settings.useHeader = useHeader
+            localSettings.emitMouseEvent = emitMouseEvent
+            localSettings.requireCommandKey = requireCommandKey
+            localSettings.useHeader = useHeader
+            settings = localSettings
 
             if mainMenu.process != nil {
                 mainMenu.stopProcess(nil)

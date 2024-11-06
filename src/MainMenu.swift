@@ -1,7 +1,7 @@
 import Cocoa
 
 class MainMenu: NSMenu {
-	var process: Process? = nil
+    var process: Process? = nil
     var versionItem: NSMenuItem? = nil
     var startItem: NSMenuItem? = nil
     var stopItem: NSMenuItem? = nil
@@ -15,9 +15,11 @@ class MainMenu: NSMenu {
 
     required init(coder: NSCoder) {
         super.init(coder: coder)
-		preferenceWindow = NSWindow(
-			contentViewController: PreferenceViewController(mainMenu: self))
-	}
+        preferenceWindow = NSWindow(
+            contentViewController: PreferenceViewController(mainMenu: self))
+        preferenceWindow?.styleMask = [.titled, .closable, .miniaturizable]
+        preferenceWindow?.title = "Preferences"
+    }
 
     public init() {
         super.init(title: "")
@@ -30,30 +32,30 @@ class MainMenu: NSMenu {
 
         // Start process
         startItem = NSMenuItem(
-                            title: "Start absolute tracking",
-                            action: #selector(MainMenu.startProcess(_:)),
-                            keyEquivalent: "s")
+            title: "Start absolute tracking",
+            action: #selector(MainMenu.startProcess(_:)),
+            keyEquivalent: "s")
         startItem!.target = self
 
         // Stop process
         stopItem = NSMenuItem(
-                            title: "Stop absolute tracking",
-                            action: #selector(MainMenu.stopProcess(_:)),
-                            keyEquivalent: "s")
+            title: "Stop absolute tracking",
+            action: #selector(MainMenu.stopProcess(_:)),
+            keyEquivalent: "s")
         stopItem!.target = self
 
         // Preference
         preferenceItem = NSMenuItem(
-                            title: "Preference",
-                            action: #selector(MainMenu.openPreference(_:)),
-                            keyEquivalent: ",")
+            title: "Preference",
+            action: #selector(MainMenu.openPreference(_:)),
+            keyEquivalent: ",")
         preferenceItem!.target = self
 
         // Quit app
         quitItem = NSMenuItem(
-                            title: "Quit trackpad mapper",
-                            action: #selector(MainMenu.terminate(_:)),
-                            keyEquivalent: "q")
+            title: "Quit trackpad mapper",
+            action: #selector(MainMenu.terminate(_:)),
+            keyEquivalent: "q")
         quitItem!.target = self
 
         addItem(versionItem!)
@@ -63,12 +65,14 @@ class MainMenu: NSMenu {
         addItem(NSMenuItem.separator())
         addItem(quitItem!)
 
-		preferenceWindow = NSWindow(
-			contentViewController: PreferenceViewController(mainMenu: self))
+        preferenceWindow = NSWindow(
+            contentViewController: PreferenceViewController(mainMenu: self))
+        preferenceWindow?.styleMask = [.titled, .closable, .miniaturizable]
+        preferenceWindow?.title = "Preferences"
     }
 
-	@objc
-	public func startProcess(_: Any?) {
+    @objc
+    public func startProcess(_: Any?) {
         if process == nil {
             var processUrl = Bundle.main.bundleURL
             processUrl.appendPathComponent("Contents/MacOS/trackpad_mapper_util")
@@ -83,29 +87,33 @@ class MainMenu: NSMenu {
                 alert(msg: "Cannot spawn process")
             }
         }
-	}
+    }
 
-	@objc
-	public func stopProcess(_: Any?) {
-		if let process = process {
-			process.terminate()
-			self.process = nil
+    @objc
+    public func stopProcess(_: Any?) {
+        if let process = process {
+            process.terminate()
+            self.process = nil
 
             items[toggleTrackingItemIndex] = startItem!
-		}
-	}
-	
-	@objc
-	public func terminate(_: Any?) {
-		if let process = process {
-			process.terminate()
-		}
-		NSApp.terminate(nil)
-	}
+        }
+    }
+
+    @objc
+    public func terminate(_: Any?) {
+        if let process = process {
+            process.terminate()
+        }
+        NSApp.terminate(nil)
+    }
 
     @objc
     public func openPreference(_: Any?) {
-        preferenceWindow!.makeKeyAndOrderFront(nil)
-        preferenceWindow!.orderedIndex = 0
+        if let window = preferenceWindow {
+            NSApp.activate(ignoringOtherApps: true)
+            window.center()
+            window.makeKeyAndOrderFront(nil)
+            window.level = .floating
+        }
     }
 }

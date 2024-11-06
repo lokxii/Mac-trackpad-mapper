@@ -19,14 +19,20 @@ typedef struct {
     Range trackpadRange;
     Range screenRange;
     bool emitMouseEvent;
+    bool requireCommandKey;
 } Settings;
 
-Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, false };
+Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, false, true };
 CGSize screenSize;
 
 int mouseEventNumber = 0;
 pthread_mutex_t mouseEventNumber_mutex;
 #define MAGIC_NUMBER 12345
+
+bool isCmdKeyPressed() {
+    CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+    return (flags & kCGEventFlagMaskCommand) != 0;
+}
 
 double _rangeRatio(double n, double lower, double upper) {
     if (n < lower || n > upper) {
@@ -61,6 +67,10 @@ MTPoint _map(double normx, double normy) {
 }
 
 void moveCursor(double x, double y) {
+    if (settings.requireCommandKey && !isCmdKeyPressed()) {
+        return;
+    }
+
     CGPoint point = {
         .x = x < 0 ? 0 : x >= screenSize.width ? screenSize.width - 1 : x,
         .y = y < 0 ? 0 : y >= screenSize.height ? screenSize.height - 1: y,
@@ -114,7 +124,7 @@ int trackpadCallback(
     static int gesturePhase = GESTURE_PHASE_NONE;
     // FIXME: how many fingers can magic trackpad detect?
     static bool gesturePaths[20] = { 0 };
-    
+
     if (nFingers == 0) {
         // all fingers lifted, clearing gesture fingers
         for (int i = 0; i < 20; i++) {
@@ -125,21 +135,21 @@ int trackpadCallback(
         startTrackTimeStamp = 0;
         return 0;
     }
-    
+
     if (!startTrackTimeStamp) {
         startTrackTimeStamp = timestamp;
     }
-    
+
     if (oldFingerCount != 1 && nFingers == 1 && !gesturePhase) {
         gesturePhase = GESTURE_PHASE_MAYSTART;
         oldFingerCount = nFingers;
         return 0;
     };
-    
+
     if (nFingers == 1 && timestamp - startTrackTimeStamp < GESTURE_TIMEOUT) {
         return 0;
     }
-    
+
     if (nFingers != 1 && (
         timestamp - startTrackTimeStamp < GESTURE_TIMEOUT ||
         gesturePhase != GESTURE_PHASE_NONE))
@@ -152,7 +162,7 @@ int trackpadCallback(
         oldFingerCount = nFingers;
         return 0;
     };
-    
+
     // keeping one finger on trackpad when lifting up fingers
     // at the end of gesture
     if (gesturePhase == GESTURE_PHASE_BEGAN) {
@@ -163,7 +173,7 @@ int trackpadCallback(
             }
         }
     }
-    
+
     gesturePhase = GESTURE_PHASE_NONE;
 
     // remembers currently using which finger
@@ -180,7 +190,7 @@ int trackpadCallback(
     fingerPosition = (settings.useArg ? _map : map)(
             f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
     MTPoint velocity = f->normalizedVector.velocity;
-    
+
     if (fingerPosition.x < 0 || fingerPosition.y < 0) {
         // Only lock cursor when finger starts path on dead zone
         if (f->pathIndex == oldPathIndex) {
@@ -199,7 +209,7 @@ int trackpadCallback(
     } else {
         oldPathIndex = f->pathIndex;
     }
-    
+
     moveCursor(fingerPosition.x, fingerPosition.y);
 
     oldTimeStamp = timestamp;
@@ -248,7 +258,7 @@ Range parseRange(char* s) {
 
 void parseSettings(int argc, char** argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:e")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:ec")) != -1) {
         switch (opt) {
             case 'i':
                 settings.trackpadRange = parseRange(optarg);
@@ -262,8 +272,12 @@ void parseSettings(int argc, char** argv) {
                 settings.emitMouseEvent = true;
                 settings.useArg = true;
                 break;
+            case 'c':
+                settings.requireCommandKey = true;
+                settings.useArg = true;
+                break;
             default:
-                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
@@ -293,9 +307,9 @@ int main(int argc, char** argv) {
     // }
     parseSettings(argc, argv);
     screenSize = CGDisplayBounds(CGMainDisplayID()).size;
-    
+
     try(pthread_mutex_init(&mouseEventNumber_mutex, NULL));
-    
+
     // start trackpad service
     // https://github.com/JitouchApp/Jitouch-project/blob/3b5018e4bc839426a6ce0917cea6df753d19da10/Application/Gesture.m#L2926-L2954
     CFArrayRef deviceList = MTDeviceCreateList();
