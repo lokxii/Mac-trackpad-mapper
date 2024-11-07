@@ -5,7 +5,7 @@ struct PreferenceUIView: View {
     @State private var useHeader: Bool = false
     @State private var trackpadRange: String = "0.05,0.1,0.95,0.9"
     @State private var screenRange: String = "0,0,1,1"
-    @State private var emitMouseEvent: Bool = true
+    @State private var emitMouseEvent: Bool = false
     @State private var requireCommandKey: Bool = true
 
     var mainMenu: MainMenu

@@ -22,7 +22,7 @@ typedef struct {
     bool requireCommandKey;
 } Settings;
 
-Settings settings = { false, { 0, 0, 1, 1 }, { 0, 0, 1, 1, }, false, true };
+Settings settings = { false, { 0.05, 0.1, 0.95, 0.9 }, { 0, 0, 1, 1 }, false, false };
 CGSize screenSize;
 
 int mouseEventNumber = 0;
