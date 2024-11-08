@@ -20,15 +20,10 @@ release:
 	make app_release
 	make bundle
 
-settings.h:
-	@if [[ ! -e settings.h ]]; then cp settings.def.h settings.h; fi
-
 util:
-	make settings.h
 	gcc ${LIBS} ${SOURCE_DIR}/${UTIL}.c -o ${BUILD_DIR}/bin/${UTIL} -g
 
 util_release:
-	make settings.h
 	gcc ${LIBS} ${SOURCE_DIR}/${UTIL}.c -o ${BUILD_DIR}/bin/${UTIL} -O3
 
 app:

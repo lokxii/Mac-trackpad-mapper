@@ -2,7 +2,6 @@
 #include <Carbon/Carbon.h>
 #include <CoreGraphics/CoreGraphics.h>
 #include "MultitouchSupport.h"
-#include "../settings.h"
 
 #define try(...) \
     if ((__VA_ARGS__) == -1) { \
@@ -76,8 +75,7 @@ void moveCursor(double x, double y) {
         .y = y < 0 ? 0 : y >= screenSize.height ? screenSize.height - 1: y,
     };
 
-    if (settings.useArg && settings.emitMouseEvent ||
-        !settings.useArg && emitMouseEvent)
+    if (settings.emitMouseEvent)
     {
         CGEventRef event = CGEventCreateMouseEvent(
             NULL,
@@ -186,8 +184,7 @@ int trackpadCallback(
     }
 
     oldFingerPosition = fingerPosition;
-    // use settings.h if no command line arguments are given
-    fingerPosition = (settings.useArg ? _map : map)(
+    fingerPosition = _map(
             f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
     MTPoint velocity = f->normalizedVector.velocity;
 

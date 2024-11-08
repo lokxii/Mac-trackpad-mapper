@@ -2,7 +2,6 @@ import Cocoa
 import SwiftUI
 
 struct PreferenceUIView: View {
-    @State private var useHeader: Bool = false
     @State private var trackpadRange: String = "0.05,0.1,0.95,0.9"
     @State private var screenRange: String = "0,0,1,1"
     @State private var emitMouseEvent: Bool = false
@@ -22,36 +21,32 @@ struct PreferenceUIView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Toggle("Use settings in header file (settings.h)", isOn: $useHeader)
-                .toggleStyle(.checkbox)
-            if !useHeader {
-                Form {
-                    HStack {
-                        Text("Trackpad region:")
-                        TextField("", text: $trackpadRange)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    HStack {
-                        Text("Screen region:")
-                        TextField("", text: $screenRange)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
+            Form {
+                HStack {
+                    Text("Trackpad region:")
+                    TextField("", text: $trackpadRange)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
-                Toggle("Emit mouse events", isOn: $emitMouseEvent)
-                    .toggleStyle(.checkbox)
-                Toggle("Activate only while ⌘ pressed", isOn: $requireCommandKey)
-                    .toggleStyle(.checkbox)
+                HStack {
+                    Text("Screen region:")
+                    TextField("", text: $screenRange)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
             }
+            Toggle("Emit mouse events", isOn: $emitMouseEvent)
+                .toggleStyle(.checkbox)
+            Toggle("Activate only while ⌘ pressed", isOn: $requireCommandKey)
+                .toggleStyle(.checkbox)
         }
         .padding()
         Button(action: {
-            if isValid && !useHeader {
+            if isValid {
                 localSettings.trackpadRange = Settings.Range(from: trackpadRange)
                 localSettings.screenRange = Settings.Range(from: screenRange)
             }
             localSettings.emitMouseEvent = emitMouseEvent
             localSettings.requireCommandKey = requireCommandKey
-            localSettings.useHeader = useHeader
+
             settings = localSettings
 
             if mainMenu.process != nil {

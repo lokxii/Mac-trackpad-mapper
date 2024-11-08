@@ -52,22 +52,22 @@ struct Settings: Codable {
 
     func toArgs() -> [String] {
         var args: [String] = []
-        if !useHeader {
-            if let trackpadRange = trackpadRange {
-                args.append("-i")
-                args.append(trackpadRange.toString())
-            }
-            if let screenRange = screenRange {
-                args.append("-o")
-                args.append(screenRange.toString())
-            }
-            if emitMouseEvent {
-                args.append("-e")
-            }
-            if requireCommandKey {
-                args.append("-c")
-            }
+
+        if let trackpadRange = trackpadRange {
+            args.append("-i")
+            args.append(trackpadRange.toString())
         }
+        if let screenRange = screenRange {
+            args.append("-o")
+            args.append(screenRange.toString())
+        }
+        if emitMouseEvent {
+            args.append("-e")
+        }
+        if requireCommandKey {
+            args.append("-c")
+        }
+
         return args
     }
 }
