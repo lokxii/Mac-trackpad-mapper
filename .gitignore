@@ -3,3 +3,4 @@ build/
 icons_script*
 *.png
 settings.h
+.DS_Store
