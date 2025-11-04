@@ -9,7 +9,7 @@ This utility maps finger position on trackpad to curosr coordinate on screen.
 
 I personally use this to play Osu! (& Osu!lazer) on Mac with trackpad.
 
-[Here](https://github.com/lokxii/Mac-trackpad-mapper) is the linux version with similar features.
+[Here](https://github.com/lokxii/Linux-Trackpad-Mapper) is the linux version with similar features.
 
 ## Usage
 
